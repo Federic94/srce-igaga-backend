@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SRCE IGAGA</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg-deep:#060d1a;--bg-card:#0d1e35;--bg-card2:#111d30;
+    --border:rgba(0,200,255,0.12);--border-bright:rgba(0,200,255,0.35);
+    --accent:#00c8ff;--accent2:#00ff9d;--accent3:#ff6b35;--accent4:#a855f7;
+    --text:#e8f4ff;--text-muted:#6b8aad;--text-dim:#3d5570;
+    --danger:#ff4d6d;--warning:#ffaa00;--success:#00e676;
+    --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+    --radius:16px;--sidebar-w:260px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg-deep);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4;}
+  #app{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  .sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0a1628,#060d1a);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform 0.3s cubic-bezier(.4,0,.2,1);}
+  .sidebar-logo{padding:26px 22px 18px;border-bottom:1px solid var(--border);}
+  .logo-badge{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent4));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(0,200,255,0.3);}
+  .logo-name{font-size:15px;font-weight:800;letter-spacing:1px;}
+  .logo-sub{font-size:10px;font-weight:500;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+  .lang-sw{padding:10px 22px;border-bottom:1px solid var(--border);display:flex;gap:8px;}
+  .lang-btn{flex:1;padding:6px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .lang-btn.active{background:rgba(0,200,255,0.1);border-color:var(--accent);color:var(--accent);}
+  .nav-wrap{flex:1;padding:14px 0;overflow-y:auto;}
+  .nav-sec{padding:8px 22px 4px;font-size:9px;font-weight:700;letter-spacing:2.5px;color:var(--text-dim);text-transform:uppercase;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 22px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;color:var(--text-muted);font-size:13px;font-weight:500;}
+  .nav-item:hover{color:var(--text);background:rgba(0,200,255,0.04);}
+  .nav-item.active{color:var(--accent);background:linear-gradient(90deg,rgba(0,200,255,0.08),transparent);border-left-color:var(--accent);}
+  .nav-icon{font-size:16px;width:20px;text-align:center;}
+  .nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;font-family:var(--mono);}
+  .sidebar-user{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .user-av{width:34px;height:34px;background:linear-gradient(135deg,var(--accent4),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+  .user-name{font-size:13px;font-weight:600;}
+  .user-role{font-size:10px;color:var(--accent2);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  .role-sw{margin-left:auto;cursor:pointer;background:rgba(0,200,255,0.1);border:1px solid var(--border-bright);border-radius:8px;padding:4px 8px;font-size:10px;color:var(--accent);font-family:var(--font);font-weight:600;transition:all 0.2s;}
+  .role-sw:hover{background:rgba(0,200,255,0.2);}
+
+  .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+  .topbar{padding:18px 30px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(6,13,26,0.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;}
+  .topbar-title{font-size:19px;font-weight:700;}
+  .topbar-r{display:flex;align-items:center;gap:10px;}
+  .tdate{font-family:var(--mono);font-size:11px;color:var(--text-muted);background:rgba(0,200,255,0.05);border:1px solid var(--border);padding:6px 12px;border-radius:8px;}
+  .notif-btn{width:34px;height:34px;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--danger);border-radius:50%;border:2px solid var(--bg-deep);}
+  .content{padding:28px;flex:1;}
+  .page{display:none;animation:fadeIn 0.3s ease;}
+  .page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:border-color 0.2s;}
+  .card:hover{border-color:var(--border-bright);}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+
+  .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all 0.2s;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--accent));border-radius:var(--radius) var(--radius) 0 0;}
+  .stat-card:hover{border-color:var(--border-bright);transform:translateY(-1px);}
+  .stat-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+  .stat-val{font-size:26px;font-weight:800;font-family:var(--mono);line-height:1;}
+  .stat-val .u{font-size:12px;font-weight:500;color:var(--text-muted);margin-left:3px;}
+  .stat-sub{font-size:11px;color:var(--text-muted);margin-top:7px;}
+  .stat-ico{position:absolute;right:16px;top:16px;font-size:26px;opacity:0.15;}
+  .pbar{height:6px;background:rgba(0,200,255,0.1);border-radius:99px;overflow:hidden;margin-top:8px;}
+  .pfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.5s;}
+
+  .idx-box{background:linear-gradient(135deg,#0a1e3a,#060d1a);border:1px solid var(--border-bright);border-radius:var(--radius);padding:26px;position:relative;overflow:hidden;margin-bottom:18px;}
+  .idx-box::after{content:'';position:absolute;top:-50%;right:-5%;width:280px;height:280px;background:radial-gradient(circle,rgba(0,200,255,0.05),transparent 70%);pointer-events:none;}
+  .idx-num{font-family:var(--mono);font-size:48px;font-weight:700;color:var(--accent);text-shadow:0 0 25px rgba(0,200,255,0.35);line-height:1;}
+  .idx-unit{font-size:15px;color:var(--text-muted);font-weight:400;}
+  .idx-amount{font-size:22px;font-weight:700;color:var(--accent2);font-family:var(--mono);}
+
+  .rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:14px;}
+  .rc{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:9px;transition:all 0.2s;position:relative;overflow:hidden;}
+  .rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,var(--text-dim));border-radius:3px 0 0 3px;}
+  .rc:hover{border-color:var(--border-bright);transform:translateX(2px);}
+  .rc-hd{display:flex;align-items:center;gap:9px;}
+  .rc-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+  .rc-name{font-size:13px;font-weight:600;}
+  .rc-apt{font-size:11px;color:var(--text-muted);}
+  .rs{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:1px;padding:2px 7px;border-radius:20px;text-transform:uppercase;}
+  .s-ok{background:rgba(0,230,118,0.1);color:var(--success);border:1px solid rgba(0,230,118,0.2);}
+  .s-pend{background:rgba(255,170,0,0.1);color:var(--warning);border:1px solid rgba(255,170,0,0.2);}
+  .s-late{background:rgba(255,77,109,0.1);color:var(--danger);border:1px solid rgba(255,77,109,0.2);}
+
+  /* TARIFF BREAKDOWN CARD */
+  .tb{background:rgba(0,0,0,0.18);border-radius:9px;padding:11px 13px;font-size:12px;}
+  .tb-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .tb-row:last-child{border-bottom:none;padding-top:7px;margin-top:2px;}
+  .tb-lbl{color:var(--text-muted);}
+  .tb-val{font-family:var(--mono);font-weight:600;}
+  .tb-total{font-size:14px;font-weight:700;color:var(--accent2);}
+  .t1b{color:var(--accent);font-size:10px;font-weight:700;background:rgba(0,200,255,0.1);padding:1px 5px;border-radius:4px;}
+  .t2b{color:var(--accent3);font-size:10px;font-weight:700;background:rgba(255,107,53,0.1);padding:1px 5px;border-radius:4px;}
+  .qbar{height:7px;background:rgba(0,200,255,0.08);border-radius:99px;overflow:hidden;margin-top:5px;position:relative;}
+  .qf1{height:100%;border-radius:99px 0 0 99px;background:var(--accent);position:absolute;left:0;}
+  .qf2{height:100%;border-radius:0 99px 99px 0;background:var(--accent3);position:absolute;}
+
+  /* TARIFF INFO BOX */
+  .tib{background:linear-gradient(135deg,rgba(0,200,255,0.04),rgba(168,85,247,0.04));border:1px solid var(--border-bright);border-radius:12px;padding:16px 18px;margin-bottom:18px;}
+  .tib-title{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+  .tib-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .tib-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+  .tib-val{font-family:var(--mono);font-size:16px;font-weight:700;}
+
+  .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .st{font-size:15px;font-weight:700;}
+  .ss{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .sa{font-size:12px;color:var(--accent);cursor:pointer;background:rgba(0,200,255,0.08);border:1px solid var(--border-bright);padding:5px 13px;border-radius:8px;font-weight:600;transition:all 0.2s;}
+  .sa:hover{background:rgba(0,200,255,0.16);}
+
+  .fg{margin-bottom:16px;}
+  .fl{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;display:block;}
+  .fi,.fsel,.fta{width:100%;padding:11px 14px;background:rgba(0,200,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px;transition:all 0.2s;outline:none;}
+  .fi:focus,.fsel:focus,.fta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,255,0.1);}
+  .fsel{cursor:pointer;} .fsel option{background:#0d1e35;}
+  .fta{resize:vertical;min-height:75px;}
+  .fhint{font-size:11px;color:var(--text-muted);margin-top:4px;}
+  .photo-up{border:2px dashed var(--border-bright);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
+  .photo-up:hover{border-color:var(--accent);background:rgba(0,200,255,0.04);}
+  .photo-up input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .btn{padding:11px 22px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;}
+  .btn-p{background:linear-gradient(135deg,var(--accent),#0099cc);color:#060d1a;box-shadow:0 4px 14px rgba(0,200,255,0.25);}
+  .btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,200,255,0.35);}
+  .btn-o{background:transparent;color:var(--accent);border:1px solid var(--border-bright);}
+  .btn-o:hover{background:rgba(0,200,255,0.08);}
+  .btn-d{background:rgba(255,77,109,0.12);color:var(--danger);border:1px solid rgba(255,77,109,0.25);}
+  .btn-s{background:rgba(0,230,118,0.12);color:var(--success);border:1px solid rgba(0,230,118,0.25);}
+  .btn-w{background:rgba(255,170,0,0.12);color:var(--warning);border:1px solid rgba(255,170,0,0.25);}
+  .btn-sm{padding:6px 13px;font-size:12px;border-radius:8px;}
+
+  .tw{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;}
+  thead{background:rgba(0,200,255,0.04);}
+  th{padding:11px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(0,200,255,0.025);}
+  .mono{font-family:var(--mono);font-size:13px;}
+
+  .vi{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:11px;transition:all 0.2s;}
+  .vi:hover{border-color:var(--border-bright);}
+  .vi-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .vi-res{flex:1;}
+  .vi-name{font-size:14px;font-weight:600;margin-bottom:2px;}
+  .vi-det{font-size:11px;color:var(--text-muted);}
+  .vi-idx{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);min-width:90px;text-align:center;}
+  .vi-acts{display:flex;gap:7px;}
+  .vi-bd{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+
+  .src-box{background:linear-gradient(135deg,#0a1628,#111d30);border:2px solid var(--border-bright);border-radius:var(--radius);padding:26px;position:relative;overflow:hidden;margin-bottom:18px;}
+  .src-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(0,200,255,0.05),transparent 60%);}
+  .src-title{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+  .src-digits{font-family:var(--mono);font-size:40px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .src-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .src-row:last-child{border-bottom:none;}
+
+  .chart-area{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .cbars{display:flex;align-items:flex-end;gap:8px;height:130px;padding-top:8px;}
+  .bgrp{flex:1;display:flex;flex-direction:column;align-items:center;}
+  .bar{width:100%;border-radius:5px 5px 0 0;transition:all 0.3s;cursor:pointer;background:linear-gradient(0deg,rgba(0,200,255,0.6),rgba(0,200,255,0.15));border:1px solid rgba(0,200,255,0.25);min-height:3px;}
+  .bar:hover{filter:brightness(1.3);}
+  .bar.b2{background:linear-gradient(0deg,rgba(0,255,157,0.55),rgba(0,255,157,0.1));border-color:rgba(0,255,157,0.25);}
+
+  .cmp-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .cmp-lbl{width:105px;font-size:12px;font-weight:600;color:var(--text-muted);text-align:right;}
+  .cmp-bw{flex:1;height:20px;background:rgba(0,200,255,0.05);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+  .cmp-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:7px;font-size:11px;font-weight:700;transition:width 0.6s cubic-bezier(.4,0,.2,1);}
+  .cmp-val{width:75px;font-family:var(--mono);font-size:12px;font-weight:700;text-align:right;}
+
+  .tabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(0,0,0,0.2);border-radius:12px;padding:4px;border:1px solid var(--border);}
+  .tab-btn{flex:1;padding:9px 14px;border-radius:9px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all 0.2s;}
+  .tab-btn.active{background:var(--bg-card);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+
+  .alert{padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;gap:11px;font-size:13px;}
+  .a-info{background:rgba(0,200,255,0.07);border:1px solid rgba(0,200,255,0.18);color:var(--accent);}
+  .a-warn{background:rgba(255,170,0,0.07);border:1px solid rgba(255,170,0,0.18);color:var(--warning);}
+  .a-ok{background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.18);color:var(--success);}
+
+  .prof-banner{background:linear-gradient(135deg,#0a1e3a,#0d1628);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:18px;position:relative;overflow:hidden;}
+  .prof-banner::after{content:'⚡';position:absolute;right:22px;top:18px;font-size:76px;opacity:0.05;transform:rotate(-15deg);}
+  .prof-av{width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,var(--accent4),var(--accent));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin-bottom:14px;box-shadow:0 0 28px rgba(168,85,247,0.28);}
+  .prof-name{font-size:21px;font-weight:800;margin-bottom:4px;}
+  .prof-role{font-size:11px;color:var(--accent2);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;}
+  .prof-meta{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
+  .pm-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+  .pm-val{font-size:14px;font-weight:600;margin-top:2px;}
+
+  .divider{height:1px;background:var(--border);margin:18px 0;}
+  .sidebar-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:90;backdrop-filter:blur(4px);}
+  .menu-tog{display:none;width:34px;height:34px;background:rgba(0,200,255,0.1);border:1px solid var(--border-bright);border-radius:10px;cursor:pointer;align-items:center;justify-content:center;font-size:18px;}
+
+  .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;align-items:center;justify-content:center;}
+  .modal-ov.open{display:flex;}
+  .modal-box{background:var(--bg-card);border:1px solid var(--border-bright);border-radius:var(--radius);padding:22px;max-width:560px;width:92%;position:relative;max-height:90vh;overflow-y:auto;}
+  .modal-close{position:absolute;top:11px;right:11px;cursor:pointer;font-size:19px;color:var(--text-muted);background:none;border:none;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:18px;}
+
+  .toast-wrap{position:fixed;bottom:22px;right:22px;z-index:300;display:flex;flex-direction:column;gap:9px;}
+  .toast{background:var(--bg-card);border:1px solid var(--border-bright);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:11px;font-size:13px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;min-width:250px;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+
+  @media(max-width:900px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);box-shadow:0 0 60px rgba(0,0,0,0.8);}
+    .sidebar-ov.open{display:block;}
+    .main{margin-left:0;}
+    .menu-tog{display:flex;}
+    .g3,.g4{grid-template-columns:1fr 1fr;}
+    .content{padding:16px;}
+    .idx-num{font-size:34px;}
+    .topbar{padding:13px 15px;}
+    .tib-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media(max-width:580px){.g3,.g4,.g2{grid-template-columns:1fr;} .tib-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="login-screen" style="display:flex;">
+  <div style="position:fixed;inset:0;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;z-index:1000;">
+    <!-- Background glow -->
+    <div style="position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,200,255,0.06) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;top:60%;left:30%;width:300px;height:300px;background:radial-gradient(circle,rgba(168,85,247,0.05) 0%,transparent 70%);pointer-events:none;"></div>
+
+    <div style="width:100%;max-width:420px;padding:20px;position:relative;z-index:1;">
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:36px;">
+        <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent4));border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 40px rgba(0,200,255,0.3);margin-bottom:16px;">⚡</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:1px;">SRCE IGAGA</div>
+        <div style="font-size:11px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-top:4px;">Système de relevé électrique</div>
+      </div>
+
+      <!-- Login card -->
+      <div style="background:var(--bg-card);border:1px solid var(--border-bright);border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px;" id="login-title">Connexion</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;" id="login-sub">Accédez à votre espace SRCE IGAGA</div>
+
+        <!-- Error message -->
+        <div id="login-error" style="display:none;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--danger);margin-bottom:16px;"></div>
+
+        <div class="fg">
+          <label class="fl" id="lbl-email">Identifiant</label>
+          <input type="text" class="fi" id="login-id" placeholder="admin ou resident" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="fg">
+          <label class="fl" id="lbl-pass">Mot de passe</label>
+          <div style="position:relative;">
+            <input type="password" class="fi" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:44px;">
+            <button onclick="togglePassVis()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;" id="pass-eye">👁</button>
+          </div>
+        </div>
+
+        <button class="btn btn-p" onclick="doLogin()" style="width:100%;margin-top:4px;justify-content:center;font-size:14px;" id="login-btn">
+          <span id="login-btn-txt">Se connecter</span>
+        </button>
+
+        <!-- Demo accounts -->
+        <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Comptes de démonstration</div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="fillDemo('admin','admin123')" style="flex:1;padding:8px 10px;background:rgba(0,200,255,0.06);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--text-muted);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size:16px;margin-bottom:3px;">👑</div>
+              <div style="font-weight:700;color:var(--text);">Admin</div>
+              <div style="font-size:10px;">admin / admin123</div>
+            </button>
+            <button onclick="fillDemo('marie','res123')" style="flex:1;padding:8px 10px;background:rgba(0,255,157,0.04);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--text-muted);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size:16px;margin-bottom:3px;">🏠</div>
+              <div style="font-weight:700;color:var(--text);">Marie R.</div>
+              <div style="font-size:10px;">marie / res123</div>
+            </button>
+            <button onclick="fillDemo('jean','res123')" style="flex:1;padding:8px 10px;background:rgba(255,107,53,0.04);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--text-muted);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent3)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size:16px;margin-bottom:3px;">🏠</div>
+              <div style="font-weight:700;color:var(--text);">Jean T.</div>
+              <div style="font-size:10px;">jean / res123</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-dim);">SRCE IGAGA v2.0 — © 2025</div>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="sidebar-ov" id="ov" onclick="closeSidebar()"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-name">SRCE IGAGA</div>
+          <div class="logo-sub">Relevé électrique</div>
+        </div>
+      </div>
+    </div>
+    <div class="lang-sw">
+      <button class="lang-btn active" onclick="setLang('fr',this)">FR</button>
+      <button class="lang-btn" onclick="setLang('en',this)">EN</button>
+    </div>
+    <div class="nav-wrap" id="nav"></div>
+    <div class="sidebar-user">
+      <div class="user-av" id="sav">LC</div>
+      <div><div class="user-name" id="suname">Lucien C.</div><div class="user-role" id="surole">Admin</div></div>
+      <button class="role-sw" onclick="toggleRole()" title="Changer de rôle">⇄</button>
+      <button class="role-sw" onclick="doLogout()" title="Déconnexion" style="background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3);color:var(--danger);">⏏</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <button class="menu-tog" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="ptitle">Tableau de bord</div>
+      </div>
+      <div class="topbar-r">
+        <div class="tdate" id="tdate"></div>
+        <div class="notif-btn" onclick="showNotif()">🔔<div class="notif-dot"></div></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ======= ACCUEIL ======= -->
+      <div id="page-home" class="page active">
+        <div class="alert a-info">ℹ️ Période en cours : <strong>Juin 2025</strong> — Clôture dans <strong>8 jours</strong></div>
+
+        <div class="tib">
+          <div class="tib-title">⚡ Grille tarifaire appliquée</div>
+          <div class="tib-grid">
+            <div><div class="tib-lbl">Tranche 1 (≤ 50 kWh global)</div><div class="tib-val" style="color:var(--accent)"><span id="tib-t1">130</span> Ar/kWh</div></div>
+            <div><div class="tib-lbl">Tranche 2 (surplus)</div><div class="tib-val" style="color:var(--accent3)"><span id="tib-t2">764</span> Ar/kWh</div></div>
+            <div><div class="tib-lbl">Quota T1/résident (<span id="tib-n">3</span> résidents)</div><div class="tib-val" style="color:var(--accent2)"><span id="tib-q">16.67</span> kWh</div></div>
+          </div>
+        </div>
+
+        <div class="idx-box">
+          <div style="margin-bottom:10px;"><div class="stat-label">Dernier index — Compteur Source</div></div>
+          <div style="display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;">
+            <div>
+              <div class="idx-num" id="h-src-idx">0<span class="idx-unit"> kWh</span></div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">📅 Relevé le 01 Juin 2025</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Consommation : <strong style="color:var(--accent);font-family:var(--mono);" id="h-src-conso">—</strong></div>
+            </div>
+            <div style="padding-bottom:4px;">
+              <div style="font-size:11px;color:var(--text-muted);">Montant total résidents :</div>
+              <div class="idx-amount" id="h-total-amount">—</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">Pertes réseau : <span style="color:var(--warning);font-family:var(--mono);" id="h-losses">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="g4" id="h-stats"></div>
+
+        <div class="sh">
+          <div><div class="st">Sous-compteurs — Résidents</div><div class="ss">Décomposition tarifaire T1/T2 par résident</div></div>
+          <div class="sa" onclick="showPage('page-validation')">Valider →</div>
+        </div>
+        <div class="rg" id="h-rg"></div>
+      </div>
+
+      <!-- ======= MON RELEVÉ ======= -->
+      <div id="page-releve" class="page">
+        <div class="alert a-warn">⚠️ Soumettez votre relevé avant le <strong>30 Juin 2025</strong></div>
+        <div class="g2">
+          <div class="card">
+            <div class="st" style="margin-bottom:18px;">Nouveau relevé</div>
+            <div class="fg"><label class="fl">Période</label><select class="fsel"><option>Juin 2025</option><option>Mai 2025</option></select></div>
+            <div class="fg">
+              <label class="fl">Index relevé (kWh)</label>
+              <input type="number" class="fi" id="ri-input" placeholder="ex: 1 540" style="font-family:var(--mono);font-size:18px;" oninput="liveCalc()">
+              <div class="fhint">Dernier index validé : <strong id="ri-prev">—</strong> kWh</div>
+            </div>
+            <div class="fg"><label class="fl">Date du relevé</label><input type="date" class="fi" id="ri-date"></div>
+            <div class="fg">
+              <label class="fl">Photo du compteur</label>
+              <div class="photo-up">
+                <input type="file" accept="image/*" onchange="handlePhoto(event)">
+                <div style="font-size:30px;margin-bottom:7px;" id="pico">📷</div>
+                <div style="font-size:13px;color:var(--text-muted);" id="ptxt">Cliquer ou glisser une photo</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">JPG, PNG — Max 5 MB</div>
+              </div>
+            </div>
+            <div class="fg"><label class="fl">Note (optionnel)</label><textarea class="fta" placeholder="Anomalie, remarque..."></textarea></div>
+            <button class="btn btn-p" onclick="submitReleve()" style="width:100%;">⬆ Soumettre le relevé</button>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:14px;">
+              <div class="st" style="margin-bottom:14px;">Calcul estimé en direct</div>
+              <div class="src-row"><span>Index précédent</span><strong class="mono" id="lc-prev">—</strong></div>
+              <div class="src-row"><span>Nouvel index</span><strong class="mono" id="lc-new">—</strong></div>
+              <div class="src-row"><span>Consommation</span><strong class="mono" id="lc-conso" style="color:var(--accent)">—</strong></div>
+              <div style="margin-top:12px;" id="lc-bd"></div>
+            </div>
+            <div class="card">
+              <div class="st" style="margin-bottom:12px;">Mes 3 derniers relevés</div>
+              <div class="tw"><table>
+                <thead><tr><th>Période</th><th>Index</th><th>kWh</th><th>Montant</th><th>Statut</th></tr></thead>
+                <tbody id="my-hist"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= HISTORIQUE ======= -->
+      <div id="page-history" class="page">
+        <div class="card" style="margin-bottom:14px;">
+          <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="fg" style="margin:0;flex:1;min-width:130px;"><label class="fl">Période</label><select class="fsel"><option>Tous</option><option>2025</option><option>2024</option></select></div>
+            <div class="fg" style="margin:0;flex:1;min-width:130px;" id="filt-res-wrap"><label class="fl">Résident</label><select class="fsel" id="filt-res"><option>Tous</option></select></div>
+            <button class="btn btn-o btn-sm" onclick="toast('Export CSV — bientôt disponible','📥')">⬇ CSV</button>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="sh"><div class="st">Évolution mensuelle (kWh)</div>
+            <div style="display:flex;gap:14px;font-size:11px;"><span style="color:var(--accent)">● Source</span><span style="color:var(--accent2)">● Sous-compteurs</span></div>
+          </div>
+          <div class="cbars" id="cbars"></div>
+          <div style="display:flex;justify-content:space-around;margin-top:5px;" id="clabels"></div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Période</th><th>Résident</th><th>Préc.</th><th>Nouv.</th><th>kWh total</th><th>kWh T1</th><th>kWh T2</th><th>Montant T1</th><th>Montant T2</th><th>Total</th><th>Statut</th></tr></thead>
+          <tbody id="hist-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- ======= VALIDATION ======= -->
+      <div id="page-validation" class="page">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab(this,'tp')">⏳ En attente (<span id="pc">0</span>)</button>
+          <button class="tab-btn" onclick="switchTab(this,'tv')">✅ Validés</button>
+          <button class="tab-btn" onclick="switchTab(this,'tr')">❌ Rejetés</button>
+        </div>
+        <div id="tp"><div id="vlist"></div></div>
+        <div id="tv" style="display:none;"><div class="tw"><table>
+          <thead><tr><th>Résident</th><th>Période</th><th>Index</th><th>kWh</th><th>T1 kWh</th><th>T2 kWh</th><th>Montant</th><th>Validé par</th></tr></thead>
+          <tbody id="vtbody"></tbody>
+        </table></div></div>
+        <div id="tr" style="display:none;"><div class="alert a-info">Aucun relevé rejeté ce mois-ci.</div></div>
+      </div>
+
+      <!-- ======= COMPTEUR SOURCE ======= -->
+      <div id="page-source" class="page">
+        <div class="src-box">
+          <div class="src-title">⚡ COMPTEUR SOURCE PRINCIPAL</div>
+          <div style="display:flex;gap:28px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Index actuel</div>
+              <div class="src-digits" id="src-dig">—</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px;font-family:var(--mono)">kWh</div>
+            </div>
+            <div style="flex:1;">
+              <div class="src-row"><span>N° compteur</span><strong class="mono">IGG-001-2024</strong></div>
+              <div class="src-row"><span>Dernier relevé</span><strong>01 Juin 2025</strong></div>
+              <div class="src-row"><span>Consommation</span><strong class="mono" style="color:var(--accent)" id="src-conso">—</strong></div>
+              <div class="src-row"><span>Total sous-compteurs</span><strong class="mono" style="color:var(--accent2)" id="src-sub">—</strong></div>
+              <div class="src-row"><span>Pertes réseau</span><strong class="mono" style="color:var(--warning)" id="src-losses">—</strong></div>
+              <div class="src-row"><span>Tarif T1</span><strong class="mono" id="src-t1-lbl">130 Ar/kWh (≤50 kWh)</strong></div>
+              <div class="src-row"><span>Tarif T2</span><strong class="mono" id="src-t2-lbl">764 Ar/kWh (surplus)</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="st" style="margin-bottom:16px;">Mettre à jour l'index source</div>
+            <div class="fg"><label class="fl">Nouvel index (kWh)</label><input type="number" class="fi" id="src-new" placeholder="24318" style="font-family:var(--mono);font-size:18px;"></div>
+            <div class="fg"><label class="fl">Index précédent (kWh)</label><input type="number" class="fi" id="src-prev" placeholder="24233" style="font-family:var(--mono);font-size:18px;"></div>
+            <div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="src-date"></div>
+            <button class="btn btn-p" style="width:100%;" onclick="saveSource()">💾 Enregistrer</button>
+          </div>
+          <div class="card">
+            <div class="st" style="margin-bottom:12px;">Historique source</div>
+            <div class="tw"><table>
+              <thead><tr><th>Mois</th><th>Index</th><th>kWh</th></tr></thead>
+              <tbody id="src-hist"><tr><td>Juin 25</td><td class="mono">24 318</td><td class="mono">85</td></tr><tr><td>Mai 25</td><td class="mono">24 233</td><td class="mono">120</td></tr><tr><td>Avr 25</td><td class="mono">24 113</td><td class="mono">98</td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= RÉSIDENTS ======= -->
+      <div id="page-residents" class="page">
+        <div class="sh">
+          <div><div class="st">Gestion des résidents</div><div class="ss" id="res-count-lbl">3 résidents actifs</div></div>
+          <button class="btn btn-p btn-sm" onclick="openAddRes()">+ Ajouter un résident</button>
+        </div>
+        <div class="tw" style="margin-bottom:18px;">
+          <table><thead><tr><th>Résident</th><th>Appartement</th><th>N° compteur</th><th>Depuis</th><th>Dernier index</th><th>Conso</th><th>Montant estimé</th><th>Statut</th><th></th></tr></thead>
+          <tbody id="res-tbody"></tbody></table>
+        </div>
+        <div class="card">
+          <div class="st" style="margin-bottom:16px;">⚙️ Paramètres tarifaires</div>
+          <div class="g3">
+            <div class="fg" style="margin:0;"><label class="fl">Tarif T1 (Ar/kWh)</label><input type="number" class="fi" id="st1" value="130" style="font-family:var(--mono);" oninput="updSettings()"><div class="fhint">Pour ≤ 50 kWh (quota global)</div></div>
+            <div class="fg" style="margin:0;"><label class="fl">Tarif T2 (Ar/kWh)</label><input type="number" class="fi" id="st2" value="764" style="font-family:var(--mono);" oninput="updSettings()"><div class="fhint">Pour le surplus</div></div>
+            <div class="fg" style="margin:0;"><label class="fl">Quota global T1 (kWh)</label><input type="number" class="fi" id="sq" value="50" style="font-family:var(--mono);" oninput="updSettings()"><div class="fhint">Partagé entre tous</div></div>
+          </div>
+          <div style="margin-top:7px;padding:11px 13px;background:rgba(0,200,255,0.04);border-radius:9px;font-size:12px;color:var(--text-muted);">
+            → Quota T1/résident : <strong style="color:var(--accent2);font-family:var(--mono);" id="qpr">16.67 kWh</strong> pour <span id="nrs">3</span> résident(s)
+          </div>
+          <button class="btn btn-p btn-sm" style="margin-top:14px;" onclick="applySettings()">✓ Appliquer</button>
+        </div>
+      </div>
+
+      <!-- ======= COMPARAISON ======= -->
+      <div id="page-compare" class="page">
+        <div class="g2" style="margin-bottom:18px;">
+          <div class="fg" style="margin:0;"><label class="fl">Période</label><select class="fsel"><option>Juin 2025 vs Mai 2025</option><option>Mai 2025 vs Avril 2025</option></select></div>
+          <div class="fg" style="margin:0;"><label class="fl">Affichage</label><select class="fsel"><option>Par résident</option><option>Global</option></select></div>
+        </div>
+        <div class="chart-area" style="margin-bottom:18px;">
+          <div class="st" style="margin-bottom:14px;">Comparaison consommation — Juin vs Mai 2025</div>
+          <div id="cmp-bars"></div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Résident</th><th>Juin kWh</th><th>Mai kWh</th><th>Variation</th><th>Montant Juin</th><th>Montant Mai</th><th>Tendance</th></tr></thead>
+          <tbody id="cmp-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- ======= PROFIL ======= -->
+      <div id="page-profile" class="page">
+        <div class="prof-banner">
+          <div class="prof-av" id="pav">LC</div>
+          <div class="prof-name" id="pname">Lucien Coulibaly</div>
+          <div class="prof-role" id="prole">Administrateur</div>
+          <div class="prof-meta">
+            <div><div class="pm-lbl">Rôle</div><div class="pm-val" id="pm-role">Admin Général</div></div>
+            <div><div class="pm-lbl">Résidents gérés</div><div class="pm-val" id="pm-res">3</div></div>
+            <div><div class="pm-lbl">Membre depuis</div><div class="pm-val">Jan 2024</div></div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="st" style="margin-bottom:16px;">Modifier le profil</div>
+            <div class="fg"><label class="fl">Nom complet</label><input type="text" class="fi" value="Lucien Coulibaly"></div>
+            <div class="fg"><label class="fl">Email</label><input type="email" class="fi" value="lucien@igaga.mg"></div>
+            <div class="fg"><label class="fl">Téléphone</label><input type="tel" class="fi" value="+261 34 00 000 00"></div>
+            <button class="btn btn-p btn-sm" onclick="toast('Profil mis à jour','✅')">💾 Sauvegarder</button>
+          </div>
+          <div class="card">
+            <div class="st" style="margin-bottom:16px;">Changer le mot de passe</div>
+            <div class="fg"><label class="fl">Actuel</label><input type="password" class="fi" placeholder="••••••••"></div>
+            <div class="fg"><label class="fl">Nouveau</label><input type="password" class="fi" placeholder="••••••••"></div>
+            <div class="fg"><label class="fl">Confirmer</label><input type="password" class="fi" placeholder="••••••••"></div>
+            <button class="btn btn-o btn-sm" onclick="toast('Mot de passe mis à jour','🔐')">🔐 Mettre à jour</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD RESIDENT -->
+<div class="modal-ov" id="modal-add">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-add')">✕</button>
+    <div class="modal-title">➕ Ajouter un résident</div>
+    <div class="fg"><label class="fl">Nom complet</label><input type="text" class="fi" id="ar-name" placeholder="Jean Rakoto"></div>
+    <div class="fg"><label class="fl">Appartement / Local</label><input type="text" class="fi" id="ar-apt" placeholder="Apt 04"></div>
+    <div class="fg"><label class="fl">N° sous-compteur</label><input type="text" class="fi" id="ar-meter" placeholder="SUB-004"></div>
+    <div class="fg"><label class="fl">Index initial (kWh)</label><input type="number" class="fi" id="ar-idx" placeholder="0" style="font-family:var(--mono);"></div>
+    <div style="display:flex;gap:9px;margin-top:4px;">
+      <button class="btn btn-o" style="flex:1;" onclick="closeModal('modal-add')">Annuler</button>
+      <button class="btn btn-p" style="flex:1;" onclick="addRes()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TARIFF DETAIL -->
+<div class="modal-ov" id="modal-tariff">
+  <div class="modal-box" style="max-width:600px;">
+    <button class="modal-close" onclick="closeModal('modal-tariff')">✕</button>
+    <div class="modal-title">📊 Détail du calcul tarifaire</div>
+    <div id="tariff-detail"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// =============================================
+// STATE
+// =============================================
+let lang = 'fr', role = 'admin', curPage = 'page-home';
+
+// =============================================
+// SUPABASE — Données seulement (auth = locale)
+// =============================================
+const SB_URL  = 'https://iinbleijkumbdpnigwea.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbmJsZWlqa3VtYmRwbmlnd2VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzNjc3NzksImV4cCI6MjA1Njk0Mzc3OX0.BiDTU4KvHN2vUplYn1t38pE5-gLiZ4-i2uLYuFgf2MY';
+let sb = null;
+
+function initSB() {
+  try {
+    if (window.supabase && !sb) {
+      sb = window.supabase.createClient(SB_URL, SB_ANON);
+    }
+  } catch(e) { console.warn('Supabase non disponible, mode local'); }
+}
+
+// Charger résidents depuis Supabase
+async function loadResidents() {
+  initSB();
+  if (!sb) return;
+  try {
+    const { data, error } = await sb.from('residents').select('*').eq('actif', true).order('id');
+    if (error || !data || !data.length) return;
+    const colors = ['#00c8ff','#ff6b35','#00ff9d','#a855f7','#ffd700'];
+    residents = data.map((r, i) => ({
+      id: r.id,
+      name: r.nom.split(' ').map((w,j) => j===0 ? w : w[0]+'.').join(' '),
+      fullName: r.nom,
+      apt: r.appartement,
+      meter: r.compteur,
+      since: 'Jan 2024',
+      color: colors[i % colors.length],
+      initials: r.nom.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
+      prevIdx: 0, currIdx: 0, status: 'pending'
+    }));
+    // Charger les index du mois en cours
+    await loadIndexMois();
+  } catch(e) { console.warn('Erreur chargement résidents:', e); }
+}
+
+// Charger index du mois en cours
+async function loadIndexMois() {
+  if (!sb) return;
+  const mois = curMois || 'Juin';
+  const annee = curAnnee || 2025;
+  try {
+    const { data } = await sb.from('index_mensuels')
+      .select('*').eq('mois', mois).eq('annee', annee);
+    if (!data) return;
+    data.forEach(idx => {
+      const r = residents.find(x => x.id === idx.resident_id);
+      if (r) {
+        r.prevIdx = idx.index_debut;
+        r.currIdx = idx.index_fin || idx.index_debut;
+        r.status = idx.valide ? 'validated' : 'pending';
+        r.dbId = idx.id;
+      }
+    });
+  } catch(e) { console.warn('Erreur chargement index:', e); }
+}
+
+// Sauvegarder index d'un résident
+async function saveIndex(residentId, prevIdx, currIdx, valide) {
+  if (!sb) return;
+  const mois = curMois || 'Juin';
+  const annee = curAnnee || 2025;
+  try {
+    const r = residents.find(x => x.id === residentId);
+    if (!r) return;
+    if (r.dbId) {
+      await sb.from('index_mensuels').update({
+        index_debut: prevIdx, index_fin: currIdx, valide: valide
+      }).eq('id', r.dbId);
+    } else {
+      const { data } = await sb.from('index_mensuels').insert({
+        resident_id: residentId, mois, annee,
+        index_debut: prevIdx, index_fin: currIdx, valide: valide
+      }).select().single();
+      if (data) r.dbId = data.id;
+    }
+  } catch(e) { console.warn('Erreur sauvegarde index:', e); }
+}
+
+// Sauvegarder compteur source
+async function saveCompteurSource(valeur) {
+  if (!sb) return;
+  const mois = curMois || 'Juin';
+  const annee = curAnnee || 2025;
+  try {
+    await sb.from('compteur_source').upsert({
+      mois, annee, index_valeur: valeur
+    }, { onConflict: 'mois,annee' });
+  } catch(e) { console.warn('Erreur sauvegarde compteur:', e); }
+}
+
+// Ajouter un résident
+async function addResidentDB(nom, appartement, compteur) {
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('residents')
+      .insert({ nom, appartement, compteur })
+      .select().single();
+    if (error) throw error;
+    return data;
+  } catch(e) { console.warn('Erreur ajout résident:', e); return null; }
+}
+
+// Modifier un résident
+async function updateResidentDB(id, nom, appartement, compteur) {
+  if (!sb) return;
+  try {
+    await sb.from('residents').update({ nom, appartement, compteur }).eq('id', id);
+  } catch(e) { console.warn('Erreur modification résident:', e); }
+}
+
+// Désactiver un résident
+async function deactivateResidentDB(id) {
+  if (!sb) return;
+  try {
+    await sb.from('residents').update({ actif: false }).eq('id', id);
+  } catch(e) { console.warn('Erreur désactivation résident:', e); }
+}
+
+// Charger historique d'un résident
+async function loadHistoriqueResident(residentId) {
+  if (!sb) return [];
+  try {
+    const { data } = await sb.from('index_mensuels')
+      .select('*').eq('resident_id', residentId).order('annee').order('mois');
+    return data || [];
+  } catch(e) { return []; }
+}
+
+let curMois = 'Juin';
+let curAnnee = 2025;
+
+
+
+let S = { t1: 130, t2: 764, quota: 50 }; // settings
+
+let residents = []; // Chargé depuis Supabase au login
+
+let srcIdx = { prev: 0, curr: 0 };
+
+// =============================================
+// TARIFF ENGINE (core algorithm)
+// =============================================
+function calcTariffs(list) {
+  const N = list.length;
+  if (!N) return [];
+  const consos = list.map(r => Math.max(0, r.currIdx - r.prevIdx));
+  let alloc = list.map(() => S.quota / N);
+
+  // Iterative redistribution of unused T1 quota
+  for (let iter = 0; iter < 30; iter++) {
+    let pool = 0;
+    let overs = [];
+    consos.forEach((c, i) => {
+      if (c < alloc[i]) { pool += alloc[i] - c; alloc[i] = c; }
+      else if (c > alloc[i]) overs.push(i);
+    });
+    if (pool < 0.0001 || !overs.length) break;
+    const share = pool / overs.length;
+    overs.forEach(i => alloc[i] += share);
+  }
+
+  return list.map((r, i) => {
+    const conso = consos[i];
+    const kT1 = Math.min(conso, alloc[i]);
+    const kT2 = Math.max(0, conso - kT1);
+    return { ...r, conso, kT1, kT2, aT1: kT1 * S.t1, aT2: kT2 * S.t2, total: kT1 * S.t1 + kT2 * S.t2, quotaBase: S.quota / N };
+  });
+}
+
+const f$ = n => Math.round(n).toLocaleString('fr-FR') + ' Ar';
+const fK = n => (Math.round(n * 100) / 100) + ' kWh';
+const r2 = n => Math.round(n * 100) / 100;
+
+// =============================================
+// HOME PAGE
+// =============================================
+function renderHome() {
+  const comp = calcTariffs(residents);
+  const totalAmt = comp.reduce((s,r) => s + r.total, 0);
+  const totalSub = comp.reduce((s,r) => s + r.conso, 0);
+  const srcConso = srcIdx.curr - srcIdx.prev;
+  const losses = srcConso - totalSub;
+
+  // tariff info box
+  document.getElementById('tib-t1').textContent = S.t1;
+  document.getElementById('tib-t2').textContent = S.t2;
+  document.getElementById('tib-n').textContent = residents.length;
+  document.getElementById('tib-q').textContent = r2(S.quota / residents.length);
+
+  // index display
+  document.getElementById('h-src-idx').innerHTML = srcIdx.curr.toLocaleString() + '<span class="idx-unit"> kWh</span>';
+  document.getElementById('h-src-conso').textContent = srcConso + ' kWh';
+  document.getElementById('h-total-amount').textContent = f$(totalAmt);
+  document.getElementById('h-losses').textContent = (losses >= 0 ? '+' : '') + r2(losses) + ' kWh';
+
+  // stats
+  const val = comp.filter(r => r.status === 'validated').length;
+  const pend = comp.filter(r => r.status !== 'validated').length;
+  document.getElementById('h-stats').innerHTML = `
+    <div class="stat-card" style="--ac:var(--accent)"><div class="stat-ico">🏠</div><div class="stat-label">Résidents actifs</div><div class="stat-val">${residents.length}</div><div class="stat-sub">${residents.length} sous-compteurs</div></div>
+    <div class="stat-card" style="--ac:var(--accent2)"><div class="stat-ico">✅</div><div class="stat-label">Relevés validés</div><div class="stat-val">${val}<span class="u">/${residents.length}</span></div><div class="pbar"><div class="pfill" style="width:${residents.length?val/residents.length*100:0}%"></div></div></div>
+    <div class="stat-card" style="--ac:var(--warning)"><div class="stat-ico">⏳</div><div class="stat-label">En attente</div><div class="stat-val">${pend}</div><div class="stat-sub">à valider ce mois</div></div>
+    <div class="stat-card" style="--ac:var(--accent3)"><div class="stat-ico">⚡</div><div class="stat-label">Conso. source</div><div class="stat-val">${srcConso}<span class="u">kWh</span></div><div class="stat-sub">Quota T1: ${r2(S.quota)} kWh</div></div>`;
+
+  // residents grid
+  document.getElementById('h-rg').innerHTML = comp.map(r => {
+    const t1Pct = r.conso > 0 ? Math.min(100, (r.kT1 / r.conso) * 100) : 100;
+    const scl = { validated:'s-ok', pending:'s-pend', late:'s-late' }[r.status] || 's-pend';
+    const stxt = { validated:'✓ Validé', pending:'⏳ En attente', late:'❌ En retard' }[r.status] || '⏳ En attente';
+    return `<div class="rc" style="--c:${r.color}">
+      <div class="rc-hd">
+        <div class="rc-av" style="background:${r.color};color:#060d1a">${r.initials}</div>
+        <div><div class="rc-name">${r.name}</div><div class="rc-apt">${r.apt}</div></div>
+        <div style="margin-left:auto;"><span class="rs ${scl}">${stxt}</span></div>
+      </div>
+      <div class="tb">
+        <div class="tb-row"><span class="tb-lbl">Consommation totale</span><span class="tb-val">${fK(r.conso)}</span></div>
+        <div class="tb-row"><span class="tb-lbl"><span class="t1b">T1</span> ${r2(r.kT1)} kWh × ${S.t1} Ar</span><span class="tb-val" style="color:var(--accent)">${f$(r.aT1)}</span></div>
+        ${r.kT2 > 0 ? `<div class="tb-row"><span class="tb-lbl"><span class="t2b">T2</span> ${r2(r.kT2)} kWh × ${S.t2} Ar</span><span class="tb-val" style="color:var(--accent3)">${f$(r.aT2)}</span></div>` : ''}
+        <div class="tb-row"><span class="tb-lbl" style="font-weight:700;">Total à payer</span><span class="tb-val tb-total">${f$(r.total)}</span></div>
+      </div>
+      <div class="qbar">
+        <div class="qf1" style="width:${t1Pct}%"></div>
+        <div class="qf2" style="left:${t1Pct}%;width:${100-t1Pct}%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:1px;">
+        <span style="color:var(--accent)">T1: ${r2(r.kT1)} kWh</span>
+        ${r.kT2 > 0 ? `<span style="color:var(--accent3)">T2: ${r2(r.kT2)} kWh</span>` : '<span>100% T1</span>'}
+      </div>
+      <button class="btn btn-o btn-sm" style="width:100%;font-size:11px;" onclick="showTariffDetail(${r.id})">🔍 Détail du calcul</button>
+      <div style="display:flex;gap:6px;margin-top:5px;"><button class="btn btn-s btn-sm" style="flex:1;font-size:11px;" onclick="generatePDF(${r.id})">📄 PDF</button><button class="btn btn-sm" style="flex:1;font-size:11px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;" onclick="shareWhatsApp(${r.id})">📲 WhatsApp</button></div>
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// TARIFF DETAIL MODAL
+// =============================================
+function showTariffDetail(id) {
+  const comp = calcTariffs(residents);
+  const r = comp.find(x => x.id === id);
+  if (!r) return;
+  const N = residents.length;
+  const qBase = r2(S.quota / N);
+  const diff = r2(r.kT1 - qBase);
+
+  document.getElementById('tariff-detail').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:700;color:#060d1a;">${r.initials}</div>
+      <div><strong>${r.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">${r.apt}</span></div>
+    </div>
+
+    <div style="background:rgba(0,0,0,0.18);border-radius:10px;padding:13px;margin-bottom:13px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;">ÉTAPES DU CALCUL</div>
+      <div class="src-row"><span>① Conso. brute</span><strong class="mono">${fK(r.conso)}</strong></div>
+      <div class="src-row"><span>② Quota T1 de base (${S.quota} ÷ ${N} résidents)</span><strong class="mono" style="color:var(--accent)">${qBase} kWh</strong></div>
+      <div class="src-row"><span>③ Quota T1 après redistribution</span><strong class="mono" style="color:var(--accent2)">${r2(r.kT1)} kWh</strong></div>
+      ${diff > 0.001 ? `<div class="src-row" style="font-size:11px;"><span style="color:var(--accent2)">   ↳ +${diff} kWh reçus de résidents sous-consommateurs</span><span style="color:var(--accent2)">→ T1</span></div>`
+      : diff < -0.001 ? `<div class="src-row" style="font-size:11px;"><span style="color:var(--text-dim)">   ↳ ${r2(-diff)} kWh de quota non utilisé → redistribués aux autres</span></div>`
+      : `<div class="src-row" style="font-size:11px;"><span style="color:var(--text-muted)">   ↳ Quota de base utilisé intégralement</span></div>`}
+      <div class="src-row"><span>④ kWh T1 × ${S.t1} Ar</span><strong class="mono" style="color:var(--accent)">${r2(r.kT1)} × ${S.t1} = ${f$(r.aT1)}</strong></div>
+      ${r.kT2 > 0
+        ? `<div class="src-row"><span>⑤ kWh T2 × ${S.t2} Ar</span><strong class="mono" style="color:var(--accent3)">${r2(r.kT2)} × ${S.t2} = ${f$(r.aT2)}</strong></div>`
+        : `<div class="src-row"><span>⑤ Tranche 2</span><strong class="mono" style="color:var(--text-dim)">Aucun dépassement ✓</strong></div>`}
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(0,255,157,0.05),rgba(0,200,255,0.05));border:1px solid var(--border-bright);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;">
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">MONTANT TOTAL À PAYER</div>
+      <div style="font-family:var(--mono);font-size:30px;font-weight:800;color:var(--accent2);">${f$(r.total)}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${r2(r.kT1)} kWh × ${S.t1} Ar + ${r2(r.kT2)} kWh × ${S.t2} Ar</div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">RÉCAP TOUS RÉSIDENTS</div>
+      ${comp.map(x => `
+        <div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <div style="width:26px;height:26px;border-radius:7px;background:${x.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#060d1a;">${x.initials}</div>
+          <div style="flex:1;font-size:12px;">${x.name}</div>
+          <span class="t1b">${r2(x.kT1)} kWh</span>
+          ${x.kT2 > 0 ? `<span class="t2b">${r2(x.kT2)} kWh</span>` : ''}
+          <strong style="font-family:var(--mono);font-size:13px;min-width:85px;text-align:right;">${f$(x.total)}</strong>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('modal-tariff').classList.add('open');
+}
+
+// =============================================
+// VALIDATION PAGE
+// =============================================
+function renderValidation() {
+  const comp = calcTariffs(residents);
+  const pending = comp.filter(r => r.status !== 'validated');
+  const validated = comp.filter(r => r.status === 'validated');
+  document.getElementById('pc').textContent = pending.length;
+
+  document.getElementById('vlist').innerHTML = !pending.length
+    ? '<div class="alert a-ok">✅ Tous les relevés ont été traités ce mois-ci.</div>'
+    : pending.map(r => `<div class="vi" id="vi-${r.id}">
+        <div class="vi-top">
+          <div style="width:38px;height:38px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:700;color:#060d1a;flex-shrink:0;">${r.initials}</div>
+          <div class="vi-res">
+            <div class="vi-name">${r.name} — ${r.apt}</div>
+            <div class="vi-det">Juin 2025 · Index: <strong class="mono">${r.currIdx.toLocaleString()}</strong> · Conso: <strong>${fK(r.conso)}</strong></div>
+          </div>
+          <div class="vi-idx">${r.currIdx.toLocaleString()}<span style="font-size:11px;color:var(--text-muted)"> kWh</span></div>
+          <div class="vi-acts">
+            <button class="btn btn-s btn-sm" onclick="validateR(${r.id})">✓ Valider</button>
+            <button class="btn btn-d btn-sm" onclick="rejectR(${r.id})">✕ Rejeter</button>
+            <button class="btn btn-o btn-sm" onclick="generatePDF(${r.id})">📄 PDF</button>
+            <button class="btn btn-sm" style="font-size:11px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;padding:5px 10px;border-radius:8px;" onclick="shareWhatsApp(${r.id})">📲 WA</button>
+          </div>
+        </div>
+        <div class="vi-bd">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Décomposition tarifaire :</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;">
+            <div style="text-align:center;background:rgba(0,200,255,0.06);border-radius:8px;padding:9px;">
+              <div style="font-size:10px;color:var(--text-muted)">kWh T1</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent)">${r2(r.kT1)}</div>
+            </div>
+            <div style="text-align:center;background:rgba(255,107,53,0.06);border-radius:8px;padding:9px;">
+              <div style="font-size:10px;color:var(--text-muted)">kWh T2</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent3)">${r2(r.kT2)}</div>
+            </div>
+            <div style="text-align:center;background:rgba(0,200,255,0.05);border-radius:8px;padding:9px;">
+              <div style="font-size:10px;color:var(--text-muted)">Montant T1</div>
+              <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)">${Math.round(r.aT1).toLocaleString()} Ar</div>
+            </div>
+            <div style="text-align:center;background:rgba(0,255,157,0.05);border-radius:8px;padding:9px;">
+              <div style="font-size:10px;color:var(--text-muted)">TOTAL</div>
+              <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent2)">${Math.round(r.total).toLocaleString()} Ar</div>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+
+  document.getElementById('vtbody').innerHTML = validated.map(r => `
+    <tr><td>${r.name} — ${r.apt}</td><td>Juin 2025</td><td class="mono">${r.currIdx.toLocaleString()}</td>
+    <td class="mono">${fK(r.conso)}</td><td class="mono" style="color:var(--accent)">${r2(r.kT1)}</td>
+    <td class="mono" style="color:var(--accent3)">${r2(r.kT2)}</td><td class="mono" style="color:var(--accent2)">${f$(r.total)}</td><td>Admin</td></tr>`).join('')
+    || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Aucun relevé validé</td></tr>';
+}
+
+async function validateR(id) {
+  const r = residents.find(x => x.id === id);
+  if (r) {
+    r.status = 'validated';
+    await saveIndex(r.id, r.prevIdx, r.currIdx, true);
+    renderHome(); renderValidation(); toast(`${r.name} — validé ✓`, '✅');
+  }
+}
+async function rejectR(id) {
+  const r = residents.find(x => x.id === id);
+  if (r) {
+    r.status = 'late';
+    await saveIndex(r.id, r.prevIdx, r.currIdx, false);
+    renderHome(); renderValidation(); toast(`${r.name} — rejeté`, '❌');
+  }
+}
+
+// =============================================
+// RESIDENTS PAGE
+// =============================================
+function renderResidents() {
+  const comp = calcTariffs(residents);
+  if(document.getElementById('res-count-lbl')) document.getElementById('res-count-lbl').textContent = residents.length + ' résidents actifs';
+  document.getElementById('pm-res').textContent = residents.length;
+  document.getElementById('nrs').textContent = residents.length;
+  document.getElementById('qpr').textContent = r2(S.quota / residents.length) + ' kWh';
+  document.getElementById('st1').value = S.t1;
+  document.getElementById('st2').value = S.t2;
+  document.getElementById('sq').value = S.quota;
+
+  // populate filter
+  const fsel = document.getElementById('filt-res');
+  if (fsel) {
+    fsel.innerHTML = '<option>Tous</option>' + residents.map(r => `<option>${r.apt} - ${r.name}</option>`).join('');
+  }
+
+  document.getElementById('res-tbody').innerHTML = comp.map(r => {
+    const sc = { validated:'s-ok', pending:'s-pend', late:'s-late' }[r.status] || 's-pend';
+    const st = { validated:'✓ Actif', pending:'⏳ En attente', late:'❌ En retard' }[r.status] || '⏳ En attente';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:7px;background:${r.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#060d1a;">${r.initials}</div>${r.name}</div></td>
+      <td>${r.apt}</td><td class="mono">${r.meter}</td><td>${r.since}</td>
+      <td class="mono">${r.currIdx.toLocaleString()}</td>
+      <td class="mono" style="color:var(--accent)">${fK(r.conso)}</td>
+      <td class="mono" style="color:var(--accent2)">${f$(r.total)}</td>
+      <td><span class="rs ${sc}">${st}</span></td>
+      <td><button class="btn btn-d btn-sm" onclick="removeRes(${r.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function removeRes(id) {
+  if (residents.length <= 1) { toast('Au moins 1 résident requis', '⚠️'); return; }
+  const r = residents.find(x => x.id === id);
+  await deactivateResidentDB(id);
+  residents = residents.filter(x => x.id !== id);
+  renderResidents(); renderHome(); renderValidation();
+  toast(`${r.name} supprimé — quota T1 recalculé`, '🗑️');
+}
+
+function openAddRes() { document.getElementById('modal-add').classList.add('open'); }
+
+async function addRes() {
+  const name = document.getElementById('ar-name').value.trim();
+  const apt = document.getElementById('ar-apt').value.trim();
+  const meter = document.getElementById('ar-meter').value.trim();
+  const idx = parseFloat(document.getElementById('ar-idx').value) || 0;
+  if (!name || !apt) { toast('Nom et appartement requis', '⚠️'); return; }
+  const cols = ['#a855f7','#ffaa00','#ec4899','#00bfff','#34d399','#f472b6'];
+  
+  // Sauvegarder dans Supabase
+  const dbRes = await addResidentDB(name, apt, meter || 'SUB-00' + Date.now());
+  const nid = dbRes ? dbRes.id : (Math.max(...residents.map(r => r.id)) + 1);
+  
+  residents.push({
+    id: nid, name, fullName: name, apt, meter: meter || 'SUB-00'+nid,
+    since: new Date().toLocaleDateString('fr-FR', {month:'short', year:'numeric'}),
+    color: cols[(residents.length) % cols.length],
+    initials: name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2),
+    prevIdx: idx, currIdx: idx, status: 'pending'
+  });
+  closeModal('modal-add');
+  renderResidents(); renderHome(); renderValidation();
+  toast(`${name} ajouté · quota T1 recalculé : ${r2(S.quota/residents.length)} kWh/résident`, '✅');
+  ['ar-name','ar-apt','ar-meter','ar-idx'].forEach(i => { document.getElementById(i).value = ''; });
+}
+
+function updSettings() {
+  const q = parseFloat(document.getElementById('sq').value) || S.quota;
+  document.getElementById('qpr').textContent = r2(q / residents.length) + ' kWh';
+  document.getElementById('nrs').textContent = residents.length;
+}
+
+function applySettings() {
+  S.t1 = parseFloat(document.getElementById('st1').value) || 130;
+  S.t2 = parseFloat(document.getElementById('st2').value) || 764;
+  S.quota = parseFloat(document.getElementById('sq').value) || 50;
+  renderHome(); renderValidation(); renderResidents();
+  toast('Paramètres appliqués · calculs recalculés', '✅');
+}
+
+// =============================================
+// SOURCE PAGE
+// =============================================
+function renderSource() {
+  const comp = calcTariffs(residents);
+  const totalSub = comp.reduce((s,r) => s + r.conso, 0);
+  const srcConso = srcIdx.curr - srcIdx.prev;
+  document.getElementById('src-dig').textContent = srcIdx.curr.toLocaleString();
+  document.getElementById('src-conso').textContent = srcConso + ' kWh';
+  document.getElementById('src-sub').textContent = r2(totalSub) + ' kWh';
+  document.getElementById('src-losses').textContent = r2(srcConso - totalSub) + ' kWh';
+  document.getElementById('src-t1-lbl').textContent = `${S.t1} Ar/kWh (≤${S.quota} kWh)`;
+  document.getElementById('src-t2-lbl').textContent = `${S.t2} Ar/kWh (surplus)`;
+}
+
+async function saveSource() {
+  const n = parseFloat(document.getElementById('src-new').value);
+  const p = parseFloat(document.getElementById('src-prev').value);
+  if (!n) { toast('Veuillez saisir un index', '⚠️'); return; }
+  if (p) srcIdx.prev = p;
+  srcIdx.curr = n;
+  await saveCompteurSource(n);
+  renderSource(); renderHome();
+  toast('Index source mis à jour ✓', '✅');
+}
+
+// =============================================
+// RELEVE PAGE
+// =============================================
+function renderReleve() {
+  const r = role === 'resident' ? residents[0] : residents[0];
+  document.getElementById('ri-prev').textContent = r.prevIdx.toLocaleString();
+  document.getElementById('lc-prev').textContent = r.prevIdx.toLocaleString() + ' kWh';
+  document.getElementById('my-hist').innerHTML = `
+    <tr><td>Mai 2025</td><td class="mono">${r.prevIdx}</td><td class="mono">130</td><td class="mono">${(130*S.t1).toLocaleString()} Ar</td><td><span class="rs s-ok">✓</span></td></tr>
+    <tr><td>Avr 2025</td><td class="mono">${r.prevIdx-130}</td><td class="mono">115</td><td class="mono">${(115*S.t1).toLocaleString()} Ar</td><td><span class="rs s-ok">✓</span></td></tr>
+    <tr><td>Mar 2025</td><td class="mono">${r.prevIdx-245}</td><td class="mono">140</td><td class="mono">${(140*S.t1).toLocaleString()} Ar</td><td><span class="rs s-ok">✓</span></td></tr>`;
+}
+
+function liveCalc() {
+  const val = parseFloat(document.getElementById('ri-input').value);
+  const r = residents[0];
+  document.getElementById('lc-new').textContent = val ? val.toLocaleString() + ' kWh' : '—';
+  if (val > r.prevIdx) {
+    const conso = val - r.prevIdx;
+    document.getElementById('lc-conso').textContent = r2(conso) + ' kWh';
+    const tmp = residents.map((x, i) => i === 0 ? {...x, currIdx: val} : x);
+    const comp = calcTariffs(tmp);
+    const me = comp[0];
+    document.getElementById('lc-bd').innerHTML = `<div class="tb">
+      <div class="tb-row"><span class="tb-lbl"><span class="t1b">T1</span> ${r2(me.kT1)} kWh × ${S.t1} Ar</span><span class="tb-val" style="color:var(--accent)">${f$(me.aT1)}</span></div>
+      ${me.kT2>0?`<div class="tb-row"><span class="tb-lbl"><span class="t2b">T2</span> ${r2(me.kT2)} kWh × ${S.t2} Ar</span><span class="tb-val" style="color:var(--accent3)">${f$(me.aT2)}</span></div>`:''}
+      <div class="tb-row"><span class="tb-lbl" style="font-weight:700;">Estimation</span><span class="tb-val tb-total">${f$(me.total)}</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:5px;">⚠️ Estimation selon la conso actuelle des autres résidents</div>`;
+  } else {
+    document.getElementById('lc-conso').textContent = val ? '⚠️ Index invalide' : '—';
+    document.getElementById('lc-bd').innerHTML = '';
+  }
+}
+
+async function submitReleve() {
+  const val = parseFloat(document.getElementById('ri-input').value);
+  const r = residents[0];
+  if (!val) { toast('Veuillez saisir un index', '⚠️'); return; }
+  if (val <= r.prevIdx) { toast('Index doit être > ' + r.prevIdx, '⚠️'); return; }
+  residents[0] = { ...r, currIdx: val, status: 'pending' };
+  await saveIndex(r.id, r.prevIdx, val, false);
+  renderHome(); renderValidation();
+  toast('Relevé soumis et sauvegardé !', '✅');
+  document.getElementById('ri-input').value = '';
+  document.getElementById('lc-bd').innerHTML = '';
+  document.getElementById('lc-new').textContent = '—';
+  document.getElementById('lc-conso').textContent = '—';
+}
+
+// =============================================
+// HISTORY PAGE
+// =============================================
+function renderHistory() {
+  const comp = calcTariffs(residents);
+  const months = ['Jan','Fév','Mar','Avr','Mai','Jun'];
+  const sV = [110,120,98,105,120, srcIdx.curr - srcIdx.prev];
+  const bV = [95,105,85,92,105, comp.reduce((s,r)=>s+r.conso,0)];
+  const mx = Math.max(...sV);
+  let bh='', lh='';
+  months.forEach((m,i) => {
+    const sh=(sV[i]/mx)*120, svh=(bV[i]/mx)*120;
+    bh += `<div class="bgrp"><div style="display:flex;align-items:flex-end;gap:3px;height:${sh+8}px">
+      <div class="bar" style="height:${sh}px;flex:1" title="${sV[i]} kWh"></div>
+      <div class="bar b2" style="height:${svh}px;flex:1" title="${bV[i]} kWh"></div>
+    </div></div>`;
+    lh += `<span style="font-size:10px;color:var(--text-muted);text-align:center;flex:1;">${m}</span>`;
+  });
+  document.getElementById('cbars').innerHTML = bh;
+  document.getElementById('clabels').innerHTML = lh;
+
+  document.getElementById('hist-tbody').innerHTML = comp.map(r => {
+    const sc = r.status==='validated'?'s-ok':'s-pend';
+    const st = r.status==='validated'?'✓ Validé':'⏳ En attente';
+    return `<tr>
+      <td>Juin 2025</td><td>${r.name}</td>
+      <td class="mono">${r.prevIdx.toLocaleString()}</td><td class="mono">${r.currIdx.toLocaleString()}</td>
+      <td class="mono">${fK(r.conso)}</td>
+      <td class="mono" style="color:var(--accent)">${r2(r.kT1)}</td>
+      <td class="mono" style="color:var(--accent3)">${r2(r.kT2)}</td>
+      <td class="mono">${Math.round(r.aT1).toLocaleString()}</td>
+      <td class="mono">${Math.round(r.aT2).toLocaleString()}</td>
+      <td class="mono" style="color:var(--accent2);font-weight:700;">${f$(r.total)}</td>
+      <td><span class="rs ${sc}">${st}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// =============================================
+// COMPARE PAGE
+// =============================================
+function renderCompare() {
+  const comp = calcTariffs(residents);
+  // simulate previous month
+  const prevComp = calcTariffs(residents.map(r => ({...r, currIdx: r.prevIdx, prevIdx: r.prevIdx - Math.max(10, Math.floor(r.conso * 0.9))})));
+  const mx = Math.max(...comp.map(r=>r.conso), ...prevComp.map(r=>r.conso), 1);
+  let ch='', th='';
+  comp.forEach((r,i) => {
+    const p = prevComp[i];
+    const pct = p.conso > 0 ? r2(((r.conso-p.conso)/p.conso)*100) : 0;
+    const trend = pct > 0 ? `<span style="color:var(--danger)">▲ +${pct}%</span>` : pct < 0 ? `<span style="color:var(--success)">▼ ${pct}%</span>` : '→';
+    ch += `<div style="margin-bottom:11px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:5px;">${r.name} — ${r.apt}</div>
+      <div class="cmp-row"><div class="cmp-lbl">Juin 2025</div><div class="cmp-bw"><div class="cmp-fill" style="width:${(r.conso/mx)*100}%;background:${r.color}">&nbsp;${r2(r.conso)} kWh</div></div><div class="cmp-val" style="color:${r.color}">${r2(r.conso)}</div></div>
+      <div class="cmp-row"><div class="cmp-lbl" style="color:var(--text-dim)">Mai 2025</div><div class="cmp-bw"><div class="cmp-fill" style="width:${(p.conso/mx)*100}%;background:rgba(255,255,255,0.07)">&nbsp;${r2(p.conso)} kWh</div></div><div class="cmp-val">${r2(p.conso)}</div></div>
+    </div>`;
+    th += `<tr><td>${r.name} — ${r.apt}</td><td class="mono">${r2(r.conso)} kWh</td><td class="mono">${r2(p.conso)} kWh</td><td>${trend}</td><td class="mono" style="color:var(--accent2)">${f$(r.total)}</td><td class="mono">${f$(p.total)}</td><td>${pct>5?'📈':pct<-5?'📉':'➡️'}</td></tr>`;
+  });
+  document.getElementById('cmp-bars').innerHTML = ch;
+  document.getElementById('cmp-tbody').innerHTML = th;
+}
+
+// =============================================
+// NAV + PAGE ROUTING
+// =============================================
+function buildNav() {
+  const isAdmin = role === 'admin';
+  const L = { fr: { home:'Accueil', releve:'Mon relevé', history:'Historique', profile:'Profil', validation:'Validation', source:'Compteur source', residents:'Résidents', compare:'Comparaison' },
+              en: { home:'Home', releve:'My Reading', history:'History', profile:'Profile', validation:'Validation', source:'Source Meter', residents:'Residents', compare:'Comparison' } }[lang];
+  let html = `<div class="nav-sec">${lang==='fr'?'ESPACE RÉSIDENT':'RESIDENT SPACE'}</div>`;
+  [{id:'home',ico:'🏠',l:'home'},{id:'releve',ico:'📝',l:'releve'},{id:'history',ico:'📊',l:'history'},{id:'profile',ico:'👤',l:'profile'}]
+    .forEach(x => { html += `<div class="nav-item ${curPage==='page-'+x.id?'active':''}" onclick="showPage('page-${x.id}')"><span class="nav-icon">${x.ico}</span>${L[x.l]}</div>`; });
+  if (isAdmin) {
+    html += `<div class="nav-sec" style="margin-top:10px;">${lang==='fr'?'ADMINISTRATION':'ADMINISTRATION'}</div>`;
+    const pend = residents.filter(r => r.status !== 'validated').length;
+    [{id:'validation',ico:'✅',l:'validation',badge:pend},{id:'source',ico:'⚡',l:'source'},{id:'residents',ico:'👥',l:'residents'},{id:'compare',ico:'📈',l:'compare'}]
+      .forEach(x => { html += `<div class="nav-item ${curPage==='page-'+x.id?'active':''}" onclick="showPage('page-${x.id}')"><span class="nav-icon">${x.ico}</span>${L[x.l]}${x.badge?`<span class="nav-badge">${x.badge}</span>`:''}</div>`; });
+  }
+  document.getElementById('nav').innerHTML = html;
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  curPage = id;
+  const T = { 'page-home':'Tableau de bord','page-releve':'Mon relevé','page-history':'Historique','page-validation':'Validation','page-source':'Compteur source','page-residents':'Résidents','page-compare':'Comparaison','page-profile':'Profil' };
+  document.getElementById('ptitle').textContent = T[id] || '';
+  buildNav();
+  if (window.innerWidth < 900) closeSidebar();
+  if (id === 'page-history') renderHistory();
+  if (id === 'page-validation') renderValidation();
+  if (id === 'page-compare') renderCompare();
+  if (id === 'page-residents') renderResidents();
+  if (id === 'page-source') renderSource();
+  if (id === 'page-releve') renderReleve();
+}
+
+// =============================================
+// HELPERS
+// =============================================
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('ov').classList.toggle('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('ov').classList.remove('open'); }
+function setLang(l, btn) { lang = l; document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); buildNav(); }
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  ['tp','tv','tr'].forEach(t => { const e=document.getElementById(t); if(e) e.style.display = t===id?'block':'none'; });
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); }));
+
+function handlePhoto(e) {
+  const f = e.target.files[0];
+  if (f) { document.getElementById('pico').textContent='✅'; document.getElementById('ptxt').textContent=f.name; toast('Photo : '+f.name,'📷'); }
+}
+
+function showNotif() {
+  const n = residents.filter(r => r.status !== 'validated').length;
+  toast(n + ' relevé(s) en attente de validation','🔔');
+}
+
+function toggleRole() {
+  // If logged in as a real resident, don't allow switching to admin
+  if (currentUser && currentUser.role === 'resident') {
+    toast('Vous êtes connecté en tant que résident', '🔒'); return;
+  }
+  role = role==='admin'?'resident':'admin';
+  const isAdmin = role==='admin';
+  document.getElementById('sav').textContent = isAdmin?'LC':'MR';
+  document.getElementById('suname').textContent = isAdmin?'Lucien C.':'Marie R.';
+  document.getElementById('surole').textContent = isAdmin?'Admin':'Résident';
+  document.getElementById('pav').textContent = isAdmin?'LC':'MR';
+  document.getElementById('pname').textContent = isAdmin?'Lucien Coulibaly':'Marie Rakotoarivelo';
+  document.getElementById('prole').textContent = isAdmin?'Administrateur':'Résident — Apt 01';
+  document.getElementById('pm-role').textContent = isAdmin?'Admin Général':'Résident';
+  if (!isAdmin && ['page-validation','page-source','page-residents','page-compare'].includes(curPage)) showPage('page-home');
+  buildNav();
+  toast('Mode : '+(isAdmin?'Administrateur':'Résident'),'👤');
+}
+
+function toast(msg, ico='✅') {
+  const tc = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span>${ico}</span>${msg}`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(16px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// =============================================
+// AUTH SYSTEM
+// =============================================
+const USERS = [
+  { id:'admin',  pass:'admin123', role:'admin',    name:'Lucien Coulibaly', initials:'LC', residentId: null },
+  { id:'marie',  pass:'res123',   role:'resident', name:'Marie Rakotoarivelo', initials:'MR', residentId: 1 },
+  { id:'jean',   pass:'res123',   role:'resident', name:'Jean Tombo', initials:'JT', residentId: 2 },
+  { id:'sophie', pass:'res123',   role:'resident', name:'Sophie Kasy', initials:'SK', residentId: 3 },
+];
+
+let currentUser = null;
+
+function fillDemo(id, pass) {
+  document.getElementById('login-id').value = id;
+  document.getElementById('login-pass').value = pass;
+  document.getElementById('login-id').focus();
+}
+
+function togglePassVis() {
+  const inp = document.getElementById('login-pass');
+  const eye = document.getElementById('pass-eye');
+  if (inp.type === 'password') { inp.type = 'text'; eye.textContent = '🙈'; }
+  else { inp.type = 'password'; eye.textContent = '👁'; }
+}
+
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn-txt');
+
+  btn.textContent = '...';
+  setTimeout(() => {
+    const user = USERS.find(u => u.id === id && u.pass === pass);
+    if (!user) {
+      errEl.textContent = 'Identifiant ou mot de passe incorrect.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Se connecter';
+      document.getElementById('login-pass').value = '';
+      return;
+    }
+    errEl.style.display = 'none';
+    currentUser = user;
+    role = user.role;
+
+    // update UI for logged-in user
+    document.getElementById('sav').textContent = user.initials;
+    document.getElementById('suname').textContent = user.name.split(' ')[0] + ' ' + user.name.split(' ')[1][0] + '.';
+    document.getElementById('surole').textContent = user.role === 'admin' ? 'Admin' : 'Résident';
+    document.getElementById('pav').textContent = user.initials;
+    document.getElementById('pname').textContent = user.name;
+    document.getElementById('prole').textContent = user.role === 'admin' ? 'Administrateur' : 'Résident — ' + (residents.find(r=>r.id===user.residentId)||{apt:''}).apt;
+    document.getElementById('pm-role').textContent = user.role === 'admin' ? 'Admin Général' : 'Résident';
+
+    // if resident, set their data as the "current" resident for releve page
+    if (user.role === 'resident' && user.residentId) {
+      const r = residents.find(x => x.id === user.residentId);
+      if (r) {
+        // move their resident to index 0 for releve context
+        const idx = residents.indexOf(r);
+        if (idx > 0) { residents.splice(idx,1); residents.unshift(r); }
+      }
+    }
+
+    // Sauvegarder session
+    localStorage.setItem('srce_session', JSON.stringify({ id: user.id, pass: user.pass }));
+
+    // hide login, show app
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    await loadResidents();
+    renderHome(); buildNav();
+    setTimeout(() => toast(`Bienvenue, ${user.name.split(' ')[0]} ⚡`, '👋'), 400);
+    btn.textContent = 'Se connecter';
+  }, 600);
+}
+
+function doLogout() {
+  currentUser = null;
+  role = 'admin';
+  localStorage.removeItem('srce_session');
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  showPage('page-home');
+}
+
+
+// =============================================
+// WHATSAPP — Partage de facture
+// =============================================
+function shareWhatsApp(resId) {
+  const comp = calcTariffs(residents);
+  const r = comp.find(x => x.id === resId);
+  if (!r) return;
+  const mois = curMois + ' ' + curAnnee;
+  const msg = `⚡ *SRCE IGAGA — Facture ${mois}*
+
+` +
+    `👤 Résident : ${r.fullName || r.name}
+` +
+    `🏠 Appartement : ${r.apt}
+` +
+    `📊 Compteur : ${r.meter}
+
+` +
+    `📈 Index précédent : ${r.prevIdx.toLocaleString()} kWh
+` +
+    `📈 Index actuel : ${r.currIdx.toLocaleString()} kWh
+` +
+    `⚡ Consommation : ${r2(r.conso)} kWh
+
+` +
+    `💰 Tranche T1 : ${r2(r.kT1)} kWh × ${S.t1} Ar = ${f$(r.aT1)}
+` +
+    (r.kT2 > 0 ? `💰 Tranche T2 : ${r2(r.kT2)} kWh × ${S.t2} Ar = ${f$(r.aT2)}
+` : '') +
+    `
+✅ *TOTAL À PAYER : ${f$(r.total)}*
+
+` +
+    `_SRCE IGAGA — Système de relevé électrique_`;
+  
+  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+// =============================================
+// PDF INVOICE GENERATOR
+// =============================================
+function generatePDF(resId) {
+  const comp = calcTariffs(residents);
+  const r = comp.find(x => x.id === resId);
+  if (!r) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, pw = 20; // page width, padding
+  const cw = W - pw * 2; // content width
+  let y = 0;
+
+  // ---- helpers ----
+  const rgb = (hex) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return [r,g,b]; };
+  const setFont = (size, style='normal', color=[232,244,255]) => { doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color); };
+  const line = (x1,y1,x2,y2,color=[55,90,120],w=0.3) => { doc.setDrawColor(...color); doc.setLineWidth(w); doc.line(x1,y1,x2,y2); };
+  const rect = (x,ry,rw,rh,fillColor,strokeColor=null) => {
+    doc.setFillColor(...fillColor);
+    if (strokeColor) { doc.setDrawColor(...strokeColor); doc.roundedRect(x,ry,rw,rh,2,2,'FD'); }
+    else doc.roundedRect(x,ry,rw,rh,2,2,'F');
+  };
+  const money = n => Math.round(n).toLocaleString('fr-FR') + ' Ar';
+
+  // ---- HEADER BAND ----
+  rect(0, 0, W, 48, [6,13,26]);
+  // accent bar top
+  doc.setFillColor(0,200,255); doc.rect(0,0,W,1.5,'F');
+
+  // logo square
+  rect(pw, 8, 14, 14, [0,100,180]);
+  setFont(14,'bold',[0,200,255]); doc.text('⚡', pw+3.5, 17.5);
+
+  // app name
+  setFont(16,'bold',[232,244,255]); doc.text('SRCE IGAGA', pw+18, 16);
+  setFont(8,'normal',[107,138,173]); doc.text('SYSTÈME DE RELEVÉ DE CONSOMMATION ÉLECTRIQUE', pw+18, 21);
+
+  // FACTURE badge
+  rect(W-pw-36, 9, 36, 12, [0,50,90], [0,200,255]);
+  setFont(9,'bold',[0,200,255]); doc.text('FACTURE', W-pw-18, 16.5, {align:'center'});
+
+  // invoice number + date
+  setFont(7,'normal',[107,138,173]);
+  const invoiceNum = 'FAC-2025-06-' + String(r.id).padStart(3,'0');
+  doc.text('N° ' + invoiceNum, W-pw-36, 25);
+  doc.text('Date : ' + new Date().toLocaleDateString('fr-FR'), W-pw-36, 29.5);
+
+  y = 56;
+
+  // ---- RESIDENT INFO + BILLING PERIOD (2 columns) ----
+  // left box
+  rect(pw, y, cw*0.48, 28, [13,30,53]);
+  setFont(7,'bold',[0,200,255]); doc.text('RÉSIDENT', pw+4, y+6);
+  setFont(10,'bold',[232,244,255]); doc.text(r.name, pw+4, y+12);
+  setFont(8,'normal',[107,138,173]); doc.text(r.apt, pw+4, y+17);
+  doc.text('Compteur : ' + r.meter, pw+4, y+22);
+  doc.text('Index actuel : ' + r.currIdx.toLocaleString() + ' kWh', pw+4, y+27);
+
+  // right box
+  const rx = pw + cw*0.52;
+  rect(rx, y, cw*0.48, 28, [13,30,53]);
+  setFont(7,'bold',[0,200,255]); doc.text('PÉRIODE DE FACTURATION', rx+4, y+6);
+  setFont(10,'bold',[232,244,255]); doc.text('Juin 2025', rx+4, y+12);
+  setFont(8,'normal',[107,138,173]); doc.text('Du 01/06/2025 au 30/06/2025', rx+4, y+17);
+  doc.text('Index précédent : ' + r.prevIdx.toLocaleString() + ' kWh', rx+4, y+22);
+  doc.text('Consommation : ' + r2(r.conso) + ' kWh', rx+4, y+27);
+
+  y += 36;
+
+  // ---- DÉTAIL CONSOMMATION ----
+  setFont(9,'bold',[0,200,255]); doc.text('DÉTAIL DE CONSOMMATION', pw, y); y += 5;
+  line(pw, y, W-pw, y, [0,200,255], 0.5); y += 4;
+
+  // table header
+  rect(pw, y, cw, 8, [0,30,60]);
+  setFont(7,'bold',[0,200,255]);
+  doc.text('Description', pw+4, y+5.5);
+  doc.text('Quantité', pw+85, y+5.5, {align:'right'});
+  doc.text('Tarif (Ar/kWh)', pw+120, y+5.5, {align:'right'});
+  doc.text('Montant (Ar)', pw+cw-2, y+5.5, {align:'right'});
+  y += 10;
+
+  // tariff info box
+  const quotaBase = r2(S.quota / residents.length);
+  const redistrib = r2(r.kT1 - quotaBase);
+
+  // row T1
+  rect(pw, y, cw, 10, [10,25,48]);
+  setFont(8,'normal',[232,244,255]);
+  doc.text('Tranche 1 — kWh <= ' + S.quota + ' kWh (quota global)', pw+4, y+4);
+  setFont(7,'normal',[107,138,173]);
+  doc.text('Quota de base : ' + quotaBase + ' kWh' + (Math.abs(redistrib) > 0.01 ? (redistrib>0 ? ' + redistrib. : +'+r2(redistrib)+' kWh' : ' - cédé : '+r2(-redistrib)+' kWh') : ''), pw+4, y+8.5);
+  setFont(8,'bold',[0,200,255]);
+  doc.text(r2(r.kT1) + ' kWh', pw+85, y+5.5, {align:'right'});
+  doc.text(String(S.t1), pw+120, y+5.5, {align:'right'});
+  doc.text(money(r.aT1), pw+cw-2, y+5.5, {align:'right'});
+  y += 12;
+
+  // row T2 (if any)
+  if (r.kT2 > 0.001) {
+    rect(pw, y, cw, 10, [13,22,38]);
+    setFont(8,'normal',[232,244,255]);
+    doc.text('Tranche 2 — surplus au-delà du quota T1', pw+4, y+4);
+    setFont(7,'normal',[107,138,173]);
+    doc.text('kWh depassant le quota T1 redistribue', pw+4, y+8.5);
+    setFont(8,'bold',[255,107,53]);
+    doc.text(r2(r.kT2) + ' kWh', pw+85, y+5.5, {align:'right'});
+    doc.text(String(S.t2), pw+120, y+5.5, {align:'right'});
+    doc.text(money(r.aT2), pw+cw-2, y+5.5, {align:'right'});
+    y += 12;
+  }
+
+  line(pw, y, W-pw, y, [55,90,120]); y += 6;
+
+  // TOTAL box
+  rect(pw + cw*0.5, y, cw*0.5, 14, [0,40,80], [0,200,255]);
+  setFont(8,'normal',[107,138,173]); doc.text('TOTAL À PAYER', pw+cw*0.5+4, y+5);
+  setFont(13,'bold',[0,255,157]); doc.text(money(r.total), W-pw-4, y+11.5, {align:'right'});
+  y += 20;
+
+  // ---- TARIFF SUMMARY BOX ----
+  rect(pw, y, cw, 22, [8,20,40]);
+  line(pw, y, W-pw, y, [0,200,255], 0.4);
+  setFont(7,'bold',[0,200,255]); doc.text('GRILLE TARIFAIRE APPLIQUÉE', pw+4, y+5);
+  setFont(8,'normal',[107,138,173]);
+  doc.text('Tranche 1 : ' + S.t1 + ' Ar/kWh  pour la consommation <= ' + S.quota + ' kWh (quota global partagé en ' + residents.length + ' parts)', pw+4, y+10);
+  doc.text('Tranche 2 : ' + S.t2 + ' Ar/kWh  pour tout kWh au-delà du quota T1 (après redistribution)', pw+4, y+15);
+  doc.text('Quota T1 par resident : ' + quotaBase + ' kWh  |  Redistribution : excess non consomme partagé entre depassants', pw+4, y+20);
+  y += 28;
+
+  // ---- ALL RESIDENTS SUMMARY ----
+  setFont(9,'bold',[0,200,255]); doc.text('RÉCAPITULATIF — TOUS LES RÉSIDENTS (Juin 2025)', pw, y); y += 5;
+  line(pw, y, W-pw, y, [0,200,255], 0.4); y += 4;
+
+  // mini table header
+  rect(pw, y, cw, 7, [0,30,60]);
+  setFont(6.5,'bold',[0,200,255]);
+  doc.text('Résident', pw+4, y+4.5);
+  doc.text('Conso.', pw+65, y+4.5, {align:'right'});
+  doc.text('kWh T1', pw+90, y+4.5, {align:'right'});
+  doc.text('kWh T2', pw+115, y+4.5, {align:'right'});
+  doc.text('Montant T1', pw+140, y+4.5, {align:'right'});
+  doc.text('TOTAL', pw+cw-2, y+4.5, {align:'right'});
+  y += 9;
+
+  comp.forEach((rx, i) => {
+    const bg = rx.id === r.id ? [0,40,80] : (i%2===0 ? [10,25,45] : [13,28,50]);
+    rect(pw, y, cw, 7, bg);
+    setFont(7, rx.id===r.id ? 'bold' : 'normal', rx.id===r.id ? [0,200,255] : [200,220,240]);
+    doc.text(rx.name + ' — ' + rx.apt, pw+4, y+4.5);
+    doc.text(r2(rx.conso) + ' kWh', pw+65, y+4.5, {align:'right'});
+    doc.text(r2(rx.kT1) + '', pw+90, y+4.5, {align:'right'});
+    doc.text(r2(rx.kT2) + '', pw+115, y+4.5, {align:'right'});
+    doc.text(money(rx.aT1), pw+140, y+4.5, {align:'right'});
+    setFont(7,'bold', rx.id===r.id ? [0,255,157] : [107,200,150]);
+    doc.text(money(rx.total), pw+cw-2, y+4.5, {align:'right'});
+    y += 8;
+  });
+
+  y += 6;
+
+  // ---- FOOTER ----
+  line(pw, y, W-pw, y, [55,90,120]); y += 5;
+  setFont(7,'normal',[55,90,120]);
+  doc.text('Ce document est généré automatiquement par SRCE IGAGA. Pour toute question, contactez l\'administrateur.', pw, y);
+  y += 5;
+  doc.text('SRCE IGAGA — Système de Relevé de Consommation Électrique — © 2025', pw, y);
+
+  // bottom accent bar
+  doc.setFillColor(0,200,255); doc.rect(0, 295, W, 1,'F');
+
+  doc.save(`Facture_${r.name.replace(' ','_')}_Juin2025.pdf`);
+  toast(`Facture PDF générée pour ${r.name}`, '📄');
+}
+
+
+
+async function init() {
+  document.getElementById('tdate').textContent = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('ri-date').valueAsDate = new Date();
+  document.getElementById('src-date').valueAsDate = new Date();
+  initSB();
+
+  // Restaurer session automatiquement
+  const saved = localStorage.getItem('srce_session');
+  if (saved) {
+    try {
+      const { id, pass } = JSON.parse(saved);
+      const user = USERS.find(u => u.id === id && u.pass === pass);
+      if (user) {
+        currentUser = user;
+        role = user.role;
+        document.getElementById('sav').textContent = user.initials;
+        document.getElementById('suname').textContent = user.name.split(' ')[0] + ' ' + user.name.split(' ')[1][0] + '.';
+        document.getElementById('surole').textContent = user.role === 'admin' ? 'Admin' : 'Résident';
+        document.getElementById('pav').textContent = user.initials;
+        document.getElementById('pname').textContent = user.name;
+        document.getElementById('prole').textContent = user.role === 'admin' ? 'Administrateur' : 'Résident';
+        document.getElementById('pm-role').textContent = user.role === 'admin' ? 'Admin Général' : 'Résident';
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        await loadResidents();
+        renderHome(); buildNav();
+        return;
+      }
+    } catch(e) { localStorage.removeItem('srce_session'); }
+  }
+  // Sinon afficher écran login
+}
+init();
+</script>
+</body>
+</html>
