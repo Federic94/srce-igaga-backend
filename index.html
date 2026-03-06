@@ -601,146 +601,144 @@
 // =============================================
 let lang = 'fr', role = 'admin', curPage = 'page-home';
 
-// =============================================
-// SUPABASE — Données seulement (auth = locale)
-// =============================================
+// ═══════════════════════════════════════════════
+// SUPABASE — données uniquement (auth = locale)
+// ═══════════════════════════════════════════════
 const SB_URL  = 'https://iinbleijkumbdpnigwea.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbmJsZWlqa3VtYmRwbmlnd2VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzNjc3NzksImV4cCI6MjA1Njk0Mzc3OX0.BiDTU4KvHN2vUplYn1t38pE5-gLiZ4-i2uLYuFgf2MY';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbmJsZWlqa3VtYmRwbmlnd2VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzNjc3NzksImV4cCI6MjA1Njk0Mzc3OX0.BiDTU4KvHN2vUplYn1t38pE5-gLiZ4-i2uLYuFgf2MY';
 let sb = null;
+const COLORS  = ['#00c8ff','#ff6b35','#00ff9d','#a855f7','#ffaa00','#ec4899'];
+const MOIS_EN_COURS = 'Juin';
+const ANNEE_EN_COURS = 2025;
 
 function initSB() {
-  try {
-    if (window.supabase && !sb) {
-      sb = window.supabase.createClient(SB_URL, SB_ANON);
-    }
-  } catch(e) { console.warn('Supabase non disponible, mode local'); }
+  if (!sb && window.supabase) {
+    sb = window.supabase.createClient(SB_URL, SB_KEY);
+  }
+  return !!sb;
 }
 
-// Charger résidents depuis Supabase
-async function loadResidents() {
-  initSB();
-  if (!sb) return;
-  try {
-    const { data, error } = await sb.from('residents').select('*').eq('actif', true).order('id');
-    if (error || !data || !data.length) return;
-    const colors = ['#00c8ff','#ff6b35','#00ff9d','#a855f7','#ffd700'];
-    residents = data.map((r, i) => ({
-      id: r.id,
-      name: r.nom.split(' ').map((w,j) => j===0 ? w : w[0]+'.').join(' '),
-      fullName: r.nom,
-      apt: r.appartement,
-      meter: r.compteur,
+async function sbLoadResidents() {
+  if (!initSB()) return;
+  const { data, error } = await sb.from('residents').select('*').eq('actif', true).order('id');
+  if (error || !data) return;
+  residents = data.map((r, i) => {
+    const parts = r.nom.trim().split(' ');
+    const name  = parts[0] + (parts[1] ? ' ' + parts[1][0] + '.' : '');
+    return {
+      id: r.id, fullName: r.nom, name,
+      apt: r.appartement, meter: r.compteur,
       since: 'Jan 2024',
-      color: colors[i % colors.length],
-      initials: r.nom.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
-      prevIdx: 0, currIdx: 0, status: 'pending'
-    }));
-    // Charger les index du mois en cours
-    await loadIndexMois();
-  } catch(e) { console.warn('Erreur chargement résidents:', e); }
+      color: COLORS[i % COLORS.length],
+      initials: parts.map(w => w[0]).join('').toUpperCase().slice(0, 2),
+      prevIdx: 0, currIdx: 0, status: 'pending', dbId: null
+    };
+  });
+  await sbLoadIndex();
 }
 
-// Charger index du mois en cours
-async function loadIndexMois() {
-  if (!sb) return;
-  const mois = curMois || 'Juin';
-  const annee = curAnnee || 2025;
-  try {
-    const { data } = await sb.from('index_mensuels')
-      .select('*').eq('mois', mois).eq('annee', annee);
-    if (!data) return;
-    data.forEach(idx => {
-      const r = residents.find(x => x.id === idx.resident_id);
-      if (r) {
-        r.prevIdx = idx.index_debut;
-        r.currIdx = idx.index_fin || idx.index_debut;
-        r.status = idx.valide ? 'validated' : 'pending';
-        r.dbId = idx.id;
-      }
-    });
-  } catch(e) { console.warn('Erreur chargement index:', e); }
-}
-
-// Sauvegarder index d'un résident
-async function saveIndex(residentId, prevIdx, currIdx, valide) {
-  if (!sb) return;
-  const mois = curMois || 'Juin';
-  const annee = curAnnee || 2025;
-  try {
-    const r = residents.find(x => x.id === residentId);
-    if (!r) return;
-    if (r.dbId) {
-      await sb.from('index_mensuels').update({
-        index_debut: prevIdx, index_fin: currIdx, valide: valide
-      }).eq('id', r.dbId);
-    } else {
-      const { data } = await sb.from('index_mensuels').insert({
-        resident_id: residentId, mois, annee,
-        index_debut: prevIdx, index_fin: currIdx, valide: valide
-      }).select().single();
-      if (data) r.dbId = data.id;
+async function sbLoadIndex() {
+  if (!sb || !residents.length) return;
+  const { data } = await sb.from('index_mensuels')
+    .select('*').eq('mois', MOIS_EN_COURS).eq('annee', ANNEE_EN_COURS);
+  if (!data) return;
+  data.forEach(row => {
+    const r = residents.find(x => x.id === row.resident_id);
+    if (r) {
+      r.prevIdx  = row.index_debut;
+      r.currIdx  = row.index_fin || row.index_debut;
+      r.status   = row.valide ? 'validated' : 'pending';
+      r.dbId     = row.id;
     }
-  } catch(e) { console.warn('Erreur sauvegarde index:', e); }
+  });
 }
 
-// Sauvegarder compteur source
-async function saveCompteurSource(valeur) {
+async function sbSaveIndex(resId, prev, curr, valide) {
   if (!sb) return;
-  const mois = curMois || 'Juin';
-  const annee = curAnnee || 2025;
-  try {
-    await sb.from('compteur_source').upsert({
-      mois, annee, index_valeur: valeur
-    }, { onConflict: 'mois,annee' });
-  } catch(e) { console.warn('Erreur sauvegarde compteur:', e); }
+  const r = residents.find(x => x.id === resId);
+  if (!r) return;
+  if (r.dbId) {
+    await sb.from('index_mensuels').update({ index_debut: prev, index_fin: curr, valide }).eq('id', r.dbId);
+  } else {
+    const { data } = await sb.from('index_mensuels').insert({
+      resident_id: resId, mois: MOIS_EN_COURS, annee: ANNEE_EN_COURS,
+      index_debut: prev, index_fin: curr, valide
+    }).select().single();
+    if (data) r.dbId = data.id;
+  }
 }
 
-// Ajouter un résident
-async function addResidentDB(nom, appartement, compteur) {
-  if (!sb) return null;
-  try {
-    const { data, error } = await sb.from('residents')
-      .insert({ nom, appartement, compteur })
-      .select().single();
-    if (error) throw error;
-    return data;
-  } catch(e) { console.warn('Erreur ajout résident:', e); return null; }
+async function sbAddResident(nom, appartement, compteur) {
+  if (!initSB()) return null;
+  const { data, error } = await sb.from('residents').insert({ nom, appartement, compteur }).select().single();
+  return error ? null : data;
 }
 
-// Modifier un résident
-async function updateResidentDB(id, nom, appartement, compteur) {
+async function sbRemoveResident(id) {
   if (!sb) return;
-  try {
-    await sb.from('residents').update({ nom, appartement, compteur }).eq('id', id);
-  } catch(e) { console.warn('Erreur modification résident:', e); }
+  await sb.from('residents').update({ actif: false }).eq('id', id);
 }
 
-// Désactiver un résident
-async function deactivateResidentDB(id) {
-  if (!sb) return;
+// ═══════════════════════════════════════════════
+// SESSION — persistance via localStorage
+// ═══════════════════════════════════════════════
+function sessionSave(user) {
+  localStorage.setItem('srce_u', JSON.stringify({ id: user.id, pass: user.pass }));
+}
+function sessionClear() {
+  localStorage.removeItem('srce_u');
+}
+async function sessionRestore() {
   try {
-    await sb.from('residents').update({ actif: false }).eq('id', id);
-  } catch(e) { console.warn('Erreur désactivation résident:', e); }
+    const raw = localStorage.getItem('srce_u');
+    if (!raw) return false;
+    const { id, pass } = JSON.parse(raw);
+    const user = USERS.find(u => u.id === id && u.pass === pass);
+    if (!user) { sessionClear(); return false; }
+    await applyLogin(user, false); // false = pas de toast
+    return true;
+  } catch(e) { sessionClear(); return false; }
 }
 
-// Charger historique d'un résident
-async function loadHistoriqueResident(residentId) {
-  if (!sb) return [];
-  try {
-    const { data } = await sb.from('index_mensuels')
-      .select('*').eq('resident_id', residentId).order('annee').order('mois');
-    return data || [];
-  } catch(e) { return []; }
-}
+// ═══════════════════════════════════════════════
+// WHATSAPP
+// ═══════════════════════════════════════════════
+function shareWhatsApp(resId) {
+  const comp = calcTariffs(residents);
+  const r    = comp.find(x => x.id === resId);
+  if (!r) return;
+  const msg =
+    `⚡ *SRCE IGAGA — Facture ${MOIS_EN_COURS} ${ANNEE_EN_COURS}*
 
-let curMois = 'Juin';
-let curAnnee = 2025;
+` +
+    `👤 ${r.fullName || r.name} — ${r.apt}
+` +
+    `📊 Compteur : ${r.meter}
+
+` +
+    `📈 Index préc. : ${r.prevIdx.toLocaleString()} kWh
+` +
+    `📈 Index act.  : ${r.currIdx.toLocaleString()} kWh
+` +
+    `⚡ Consommation : ${r2(r.conso)} kWh
+
+` +
+    `💰 T1 : ${r2(r.kT1)} kWh × ${S.t1} Ar = ${f$(r.aT1)}
+` +
+    (r.kT2 > 0 ? `💰 T2 : ${r2(r.kT2)} kWh × ${S.t2} Ar = ${f$(r.aT2)}
+` : '') +
+    `
+✅ *TOTAL : ${f$(r.total)}*
+
+_SRCE IGAGA_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
 
 
 
 let S = { t1: 130, t2: 764, quota: 50 }; // settings
 
-let residents = []; // Chargé depuis Supabase au login
+let residents = []; // chargé depuis Supabase
 
 let srcIdx = { prev: 0, curr: 0 };
 
@@ -835,7 +833,7 @@ function renderHome() {
         ${r.kT2 > 0 ? `<span style="color:var(--accent3)">T2: ${r2(r.kT2)} kWh</span>` : '<span>100% T1</span>'}
       </div>
       <button class="btn btn-o btn-sm" style="width:100%;font-size:11px;" onclick="showTariffDetail(${r.id})">🔍 Détail du calcul</button>
-      <div style="display:flex;gap:6px;margin-top:5px;"><button class="btn btn-s btn-sm" style="flex:1;font-size:11px;" onclick="generatePDF(${r.id})">📄 PDF</button><button class="btn btn-sm" style="flex:1;font-size:11px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;" onclick="shareWhatsApp(${r.id})">📲 WhatsApp</button></div>
+      <div style="display:flex;gap:6px;margin-top:5px;"><button class="btn btn-s btn-sm" style="flex:1;font-size:11px;" onclick="generatePDF(${r.id})">📄 PDF</button><button class="btn btn-sm" style="flex:1;font-size:11px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;border-radius:9px;cursor:pointer;" onclick="shareWhatsApp(${r.id})">📲 WhatsApp</button></div>
     </div>`;
   }).join('');
 }
@@ -914,8 +912,7 @@ function renderValidation() {
           <div class="vi-acts">
             <button class="btn btn-s btn-sm" onclick="validateR(${r.id})">✓ Valider</button>
             <button class="btn btn-d btn-sm" onclick="rejectR(${r.id})">✕ Rejeter</button>
-            <button class="btn btn-o btn-sm" onclick="generatePDF(${r.id})">📄 PDF</button>
-            <button class="btn btn-sm" style="font-size:11px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;padding:5px 10px;border-radius:8px;" onclick="shareWhatsApp(${r.id})">📲 WA</button>
+            <button class="btn btn-o btn-sm" onclick="generatePDF(${r.id})">📄 PDF</button><button class="btn btn-sm" style="font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25d366;" onclick="shareWhatsApp(${r.id})">📲 WA</button>
           </div>
         </div>
         <div class="vi-bd">
@@ -950,19 +947,11 @@ function renderValidation() {
 
 async function validateR(id) {
   const r = residents.find(x => x.id === id);
-  if (r) {
-    r.status = 'validated';
-    await saveIndex(r.id, r.prevIdx, r.currIdx, true);
-    renderHome(); renderValidation(); toast(`${r.name} — validé ✓`, '✅');
-  }
+  if (r) { r.status = 'validated'; await sbSaveIndex(r.id, r.prevIdx, r.currIdx, true); renderHome(); renderValidation(); toast(`${r.name} — validé ✓`, '✅'); }
 }
 async function rejectR(id) {
   const r = residents.find(x => x.id === id);
-  if (r) {
-    r.status = 'late';
-    await saveIndex(r.id, r.prevIdx, r.currIdx, false);
-    renderHome(); renderValidation(); toast(`${r.name} — rejeté`, '❌');
-  }
+  if (r) { r.status = 'late'; await sbSaveIndex(r.id, r.prevIdx, r.currIdx, false); renderHome(); renderValidation(); toast(`${r.name} — rejeté`, '❌'); }
 }
 
 // =============================================
@@ -970,7 +959,7 @@ async function rejectR(id) {
 // =============================================
 function renderResidents() {
   const comp = calcTariffs(residents);
-  if(document.getElementById('res-count-lbl')) document.getElementById('res-count-lbl').textContent = residents.length + ' résidents actifs';
+  document.getElementById('res-count-lbl').textContent = residents.length + ' résidents actifs';
   document.getElementById('pm-res').textContent = residents.length;
   document.getElementById('nrs').textContent = residents.length;
   document.getElementById('qpr').textContent = r2(S.quota / residents.length) + ' kWh';
@@ -1002,36 +991,37 @@ function renderResidents() {
 async function removeRes(id) {
   if (residents.length <= 1) { toast('Au moins 1 résident requis', '⚠️'); return; }
   const r = residents.find(x => x.id === id);
-  await deactivateResidentDB(id);
+  await sbRemoveResident(id);
   residents = residents.filter(x => x.id !== id);
   renderResidents(); renderHome(); renderValidation();
-  toast(`${r.name} supprimé — quota T1 recalculé`, '🗑️');
+  toast(`${r.name} supprimé`, '🗑️');
 }
 
 function openAddRes() { document.getElementById('modal-add').classList.add('open'); }
 
 async function addRes() {
-  const name = document.getElementById('ar-name').value.trim();
-  const apt = document.getElementById('ar-apt').value.trim();
-  const meter = document.getElementById('ar-meter').value.trim();
-  const idx = parseFloat(document.getElementById('ar-idx').value) || 0;
-  if (!name || !apt) { toast('Nom et appartement requis', '⚠️'); return; }
-  const cols = ['#a855f7','#ffaa00','#ec4899','#00bfff','#34d399','#f472b6'];
-  
-  // Sauvegarder dans Supabase
-  const dbRes = await addResidentDB(name, apt, meter || 'SUB-00' + Date.now());
-  const nid = dbRes ? dbRes.id : (Math.max(...residents.map(r => r.id)) + 1);
-  
+  const fullName = document.getElementById('ar-name').value.trim();
+  const apt      = document.getElementById('ar-apt').value.trim();
+  const meter    = document.getElementById('ar-meter').value.trim();
+  const idx      = parseFloat(document.getElementById('ar-idx').value) || 0;
+  if (!fullName || !apt) { toast('Nom et appartement requis', '⚠️'); return; }
+
+  const dbRes = await sbAddResident(fullName, apt, meter || 'SUB-' + Date.now());
+  const nid   = dbRes ? dbRes.id : (residents.length ? Math.max(...residents.map(r => r.id)) + 1 : 1);
+  const parts = fullName.trim().split(' ');
+  const name  = parts[0] + (parts[1] ? ' ' + parts[1][0] + '.' : '');
+
   residents.push({
-    id: nid, name, fullName: name, apt, meter: meter || 'SUB-00'+nid,
+    id: nid, fullName, name, apt,
+    meter: meter || 'SUB-' + nid,
     since: new Date().toLocaleDateString('fr-FR', {month:'short', year:'numeric'}),
-    color: cols[(residents.length) % cols.length],
-    initials: name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2),
-    prevIdx: idx, currIdx: idx, status: 'pending'
+    color: COLORS[residents.length % COLORS.length],
+    initials: parts.map(w => w[0]).join('').toUpperCase().slice(0, 2),
+    prevIdx: idx, currIdx: idx, status: 'pending', dbId: null
   });
   closeModal('modal-add');
   renderResidents(); renderHome(); renderValidation();
-  toast(`${name} ajouté · quota T1 recalculé : ${r2(S.quota/residents.length)} kWh/résident`, '✅');
+  toast(`${name} ajouté ✓`, '✅');
   ['ar-name','ar-apt','ar-meter','ar-idx'].forEach(i => { document.getElementById(i).value = ''; });
 }
 
@@ -1064,15 +1054,14 @@ function renderSource() {
   document.getElementById('src-t2-lbl').textContent = `${S.t2} Ar/kWh (surplus)`;
 }
 
-async function saveSource() {
+function saveSource() {
   const n = parseFloat(document.getElementById('src-new').value);
   const p = parseFloat(document.getElementById('src-prev').value);
   if (!n) { toast('Veuillez saisir un index', '⚠️'); return; }
   if (p) srcIdx.prev = p;
   srcIdx.curr = n;
-  await saveCompteurSource(n);
   renderSource(); renderHome();
-  toast('Index source mis à jour ✓', '✅');
+  toast('Index source mis à jour', '✅');
 }
 
 // =============================================
@@ -1112,16 +1101,16 @@ function liveCalc() {
 
 async function submitReleve() {
   const val = parseFloat(document.getElementById('ri-input').value);
-  const r = residents[0];
+  const r   = residents[0];
   if (!val) { toast('Veuillez saisir un index', '⚠️'); return; }
   if (val <= r.prevIdx) { toast('Index doit être > ' + r.prevIdx, '⚠️'); return; }
   residents[0] = { ...r, currIdx: val, status: 'pending' };
-  await saveIndex(r.id, r.prevIdx, val, false);
+  await sbSaveIndex(r.id, r.prevIdx, val, false);
   renderHome(); renderValidation();
-  toast('Relevé soumis et sauvegardé !', '✅');
-  document.getElementById('ri-input').value = '';
+  toast('Relevé soumis et sauvegardé ✓', '✅');
+  document.getElementById('ri-input').value  = '';
   document.getElementById('lc-bd').innerHTML = '';
-  document.getElementById('lc-new').textContent = '—';
+  document.getElementById('lc-new').textContent   = '—';
   document.getElementById('lc-conso').textContent = '—';
 }
 
@@ -1300,108 +1289,57 @@ function togglePassVis() {
   else { inp.type = 'password'; eye.textContent = '👁'; }
 }
 
+
+async function applyLogin(user, showToast = true) {
+  currentUser = user;
+  role = user.role;
+  // UI
+  const shortName = user.name.split(' ')[0] + ' ' + (user.name.split(' ')[1] || [''])[0] + '.';
+  document.getElementById('sav').textContent    = user.initials;
+  document.getElementById('suname').textContent = shortName;
+  document.getElementById('surole').textContent = user.role === 'admin' ? 'Admin' : 'Résident';
+  document.getElementById('pav').textContent    = user.initials;
+  document.getElementById('pname').textContent  = user.name;
+  document.getElementById('prole').textContent  = user.role === 'admin' ? 'Administrateur' : 'Résident';
+  document.getElementById('pm-role').textContent= user.role === 'admin' ? 'Admin Général' : 'Résident';
+  // Charger données
+  await sbLoadResidents();
+  // Afficher app
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  renderHome(); buildNav();
+  if (showToast) setTimeout(() => toast(`Bienvenue, ${user.name.split(' ')[0]} ⚡`, '👋'), 400);
+}
+
 async function doLogin() {
-  const id = document.getElementById('login-id').value.trim().toLowerCase();
-  const pass = document.getElementById('login-pass').value;
+  const id    = document.getElementById('login-id').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-btn-txt');
-
+  const btn   = document.getElementById('login-btn-txt');
   btn.textContent = '...';
-  setTimeout(() => {
-    const user = USERS.find(u => u.id === id && u.pass === pass);
-    if (!user) {
-      errEl.textContent = 'Identifiant ou mot de passe incorrect.';
-      errEl.style.display = 'block';
-      btn.textContent = 'Se connecter';
-      document.getElementById('login-pass').value = '';
-      return;
-    }
-    errEl.style.display = 'none';
-    currentUser = user;
-    role = user.role;
-
-    // update UI for logged-in user
-    document.getElementById('sav').textContent = user.initials;
-    document.getElementById('suname').textContent = user.name.split(' ')[0] + ' ' + user.name.split(' ')[1][0] + '.';
-    document.getElementById('surole').textContent = user.role === 'admin' ? 'Admin' : 'Résident';
-    document.getElementById('pav').textContent = user.initials;
-    document.getElementById('pname').textContent = user.name;
-    document.getElementById('prole').textContent = user.role === 'admin' ? 'Administrateur' : 'Résident — ' + (residents.find(r=>r.id===user.residentId)||{apt:''}).apt;
-    document.getElementById('pm-role').textContent = user.role === 'admin' ? 'Admin Général' : 'Résident';
-
-    // if resident, set their data as the "current" resident for releve page
-    if (user.role === 'resident' && user.residentId) {
-      const r = residents.find(x => x.id === user.residentId);
-      if (r) {
-        // move their resident to index 0 for releve context
-        const idx = residents.indexOf(r);
-        if (idx > 0) { residents.splice(idx,1); residents.unshift(r); }
-      }
-    }
-
-    // Sauvegarder session
-    localStorage.setItem('srce_session', JSON.stringify({ id: user.id, pass: user.pass }));
-
-    // hide login, show app
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    await loadResidents();
-    renderHome(); buildNav();
-    setTimeout(() => toast(`Bienvenue, ${user.name.split(' ')[0]} ⚡`, '👋'), 400);
+  errEl.style.display = 'none';
+  const user = USERS.find(u => u.id === id && u.pass === pass);
+  if (!user) {
+    errEl.textContent = 'Identifiant ou mot de passe incorrect.';
+    errEl.style.display = 'block';
     btn.textContent = 'Se connecter';
-  }, 600);
+    document.getElementById('login-pass').value = '';
+    return;
+  }
+  sessionSave(user);
+  await applyLogin(user, true);
+  btn.textContent = 'Se connecter';
 }
 
 function doLogout() {
-  currentUser = null;
-  role = 'admin';
-  localStorage.removeItem('srce_session');
-  document.getElementById('login-id').value = '';
+  currentUser = null; role = 'admin'; residents = [];
+  sessionClear();
+  document.getElementById('login-id').value   = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-error').style.display = 'none';
-  document.getElementById('app').style.display = 'none';
+  document.getElementById('app').style.display   = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   showPage('page-home');
-}
-
-
-// =============================================
-// WHATSAPP — Partage de facture
-// =============================================
-function shareWhatsApp(resId) {
-  const comp = calcTariffs(residents);
-  const r = comp.find(x => x.id === resId);
-  if (!r) return;
-  const mois = curMois + ' ' + curAnnee;
-  const msg = `⚡ *SRCE IGAGA — Facture ${mois}*
-
-` +
-    `👤 Résident : ${r.fullName || r.name}
-` +
-    `🏠 Appartement : ${r.apt}
-` +
-    `📊 Compteur : ${r.meter}
-
-` +
-    `📈 Index précédent : ${r.prevIdx.toLocaleString()} kWh
-` +
-    `📈 Index actuel : ${r.currIdx.toLocaleString()} kWh
-` +
-    `⚡ Consommation : ${r2(r.conso)} kWh
-
-` +
-    `💰 Tranche T1 : ${r2(r.kT1)} kWh × ${S.t1} Ar = ${f$(r.aT1)}
-` +
-    (r.kT2 > 0 ? `💰 Tranche T2 : ${r2(r.kT2)} kWh × ${S.t2} Ar = ${f$(r.aT2)}
-` : '') +
-    `
-✅ *TOTAL À PAYER : ${f$(r.total)}*
-
-` +
-    `_SRCE IGAGA — Système de relevé électrique_`;
-  
-  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
-  window.open(url, '_blank');
 }
 
 // =============================================
@@ -1586,32 +1524,8 @@ async function init() {
   document.getElementById('ri-date').valueAsDate = new Date();
   document.getElementById('src-date').valueAsDate = new Date();
   initSB();
-
-  // Restaurer session automatiquement
-  const saved = localStorage.getItem('srce_session');
-  if (saved) {
-    try {
-      const { id, pass } = JSON.parse(saved);
-      const user = USERS.find(u => u.id === id && u.pass === pass);
-      if (user) {
-        currentUser = user;
-        role = user.role;
-        document.getElementById('sav').textContent = user.initials;
-        document.getElementById('suname').textContent = user.name.split(' ')[0] + ' ' + user.name.split(' ')[1][0] + '.';
-        document.getElementById('surole').textContent = user.role === 'admin' ? 'Admin' : 'Résident';
-        document.getElementById('pav').textContent = user.initials;
-        document.getElementById('pname').textContent = user.name;
-        document.getElementById('prole').textContent = user.role === 'admin' ? 'Administrateur' : 'Résident';
-        document.getElementById('pm-role').textContent = user.role === 'admin' ? 'Admin Général' : 'Résident';
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        await loadResidents();
-        renderHome(); buildNav();
-        return;
-      }
-    } catch(e) { localStorage.removeItem('srce_session'); }
-  }
-  // Sinon afficher écran login
+  const restored = await sessionRestore();
+  // Si pas de session : l'écran login reste affiché (c'est le défaut HTML)
 }
 init();
 </script>
